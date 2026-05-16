@@ -69,23 +69,23 @@ function stripMarkers(text) {
 }
 
 // Inline markdown: **bold** and *italic* → TextRun array
-function parseInlineRuns(text) {
+function parseInlineRuns(text, tx) {
   const runs = [];
   // Combined regex for **bold** and *italic*
   const re = /(\*\*[^*]+\*\*|\*[^*]+\*)/g;
   let last = 0, m;
   while ((m = re.exec(text)) !== null) {
-    if (m.index > last) runs.push(new TextRun({ text: ss(text.slice(last, m.index)), font: 'Georgia' }));
+    if (m.index > last) runs.push(new TextRun({ text: tx(text.slice(last, m.index)), font: 'Georgia' }));
     const tok = m[0];
-    if (tok.startsWith('**')) runs.push(new TextRun({ text: ss(tok.slice(2, -2)), bold: true, font: 'Georgia' }));
-    else runs.push(new TextRun({ text: ss(tok.slice(1, -1)), italics: true, font: 'Georgia' }));
+    if (tok.startsWith('**')) runs.push(new TextRun({ text: tx(tok.slice(2, -2)), bold: true, font: 'Georgia' }));
+    else runs.push(new TextRun({ text: tx(tok.slice(1, -1)), italics: true, font: 'Georgia' }));
     last = re.lastIndex;
   }
-  if (last < text.length) runs.push(new TextRun({ text: ss(text.slice(last)), font: 'Georgia' }));
-  return runs.length ? runs : [new TextRun({ text: ss(text), font: 'Georgia' })];
+  if (last < text.length) runs.push(new TextRun({ text: tx(text.slice(last)), font: 'Georgia' }));
+  return runs.length ? runs : [new TextRun({ text: tx(text), font: 'Georgia' })];
 }
 
-function bodyParagraphs(bodyText) {
+function bodyParagraphs(bodyText, tx) {
   const cleaned = stripMarkers(bodyText);
   const blocks = cleaned.split(/\n\s*\n/).map(b => b.trim()).filter(Boolean);
   const out = [];
@@ -95,7 +95,7 @@ function bodyParagraphs(bodyText) {
     const children = [];
     lines.forEach((line, i) => {
       if (i > 0) children.push(new TextRun({ break: 1 }));
-      children.push(...parseInlineRuns(line));
+      children.push(...parseInlineRuns(line, tx));
     });
     out.push(new Paragraph({
       children,
@@ -108,14 +108,43 @@ function bodyParagraphs(bodyText) {
 
 export const config = { maxDuration: 30 };
 
+const LOCALE_LABELS = {
+  de: {
+    brand: 'herzbewegung · Familien-Code',
+    title: 'Deine Seelenlandschaft',
+    notes: '— Notizen —',
+    footerName: 'Susana · Numerologie & Astrologie',
+    locale: 'de-CH',
+  },
+  en: {
+    brand: 'herzbewegung · Family Code',
+    title: 'Your Soul Landscape',
+    notes: '— Notes —',
+    footerName: 'Susana · Numerology & Astrology',
+    locale: 'en-GB',
+  },
+  pt: {
+    brand: 'herzbewegung · Código Familiar',
+    title: 'A Tua Paisagem da Alma',
+    notes: '— Notas —',
+    footerName: 'Susana · Numerologia & Astrologia',
+    locale: 'pt-PT',
+  },
+};
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  const { rawText, name } = req.body || {};
+  const { rawText, name, language } = req.body || {};
   if (!rawText || typeof rawText !== 'string') {
     return res.status(400).json({ error: 'Missing rawText' });
   }
 
-  const displayName = ss(name || 'Deine Analyse');
+  const lang = (language === 'en' || language === 'pt') ? language : 'de';
+  const L = LOCALE_LABELS[lang];
+  // ss-Filter only applies to German output
+  const filterText = (s) => lang === 'de' ? ss(s) : String(s || '');
+
+  const displayName = filterText(name || (lang === 'en' ? 'Your Analysis' : lang === 'pt' ? 'A Tua Análise' : 'Deine Analyse'));
 
   // Split sections by ~~~
   const sections = rawText.split('~~~').map(s => s.trim()).filter(Boolean);
@@ -127,12 +156,12 @@ export default async function handler(req, res) {
   children.push(new Paragraph({
     spacing: { before: 1200, after: 240 },
     alignment: AlignmentType.CENTER,
-    children: [new TextRun({ text: 'herzbewegung · Familien-Code', font: 'Georgia', size: 22, color: '8B4060' })],
+    children: [new TextRun({ text: filterText(L.brand), font: 'Georgia', size: 22, color: '8B4060' })],
   }));
   children.push(new Paragraph({
     spacing: { before: 240, after: 240 },
     alignment: AlignmentType.CENTER,
-    children: [new TextRun({ text: 'Deine Seelenlandschaft', font: 'Playfair Display', size: 56, color: '1C1714' })],
+    children: [new TextRun({ text: filterText(L.title), font: 'Playfair Display', size: 56, color: '1C1714' })],
   }));
   children.push(new Paragraph({
     spacing: { before: 120, after: 120 },
@@ -142,7 +171,7 @@ export default async function handler(req, res) {
   children.push(new Paragraph({
     spacing: { before: 720 },
     alignment: AlignmentType.CENTER,
-    children: [new TextRun({ text: ss(new Date().toLocaleDateString('de-CH', { day: '2-digit', month: 'long', year: 'numeric' })), font: 'Georgia', size: 20, color: '9A8A80' })],
+    children: [new TextRun({ text: filterText(new Date().toLocaleDateString(L.locale, { day: '2-digit', month: 'long', year: 'numeric' })), font: 'Georgia', size: 20, color: '9A8A80' })],
   }));
   children.push(new Paragraph({ children: [new PageBreak()] }));
 
@@ -156,17 +185,17 @@ export default async function handler(req, res) {
     children.push(new Paragraph({
       heading: HeadingLevel.HEADING_2,
       spacing: { before: 360, after: 240 },
-      children: [new TextRun({ text: ss(title), font: 'Playfair Display', size: 36, color: '8B4060' })],
+      children: [new TextRun({ text: filterText(title), font: 'Playfair Display', size: 36, color: '8B4060' })],
       border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: 'C4962A', space: 8 } },
     }));
 
     // Body paragraphs
-    bodyParagraphs(bodyText).forEach(p => children.push(p));
+    bodyParagraphs(bodyText, filterText).forEach(p => children.push(p));
 
     // Note line (a few empty lines for handwritten notes)
     children.push(new Paragraph({
       spacing: { before: 360, after: 60 },
-      children: [new TextRun({ text: '— Notizen —', font: 'Georgia', size: 16, italics: true, color: '9A8A80' })],
+      children: [new TextRun({ text: L.notes, font: 'Georgia', size: 16, italics: true, color: '9A8A80' })],
     }));
     for (let i = 0; i < 4; i++) {
       children.push(new Paragraph({
@@ -196,7 +225,7 @@ export default async function handler(req, res) {
   children.push(new Paragraph({
     spacing: { before: 60, after: 60 },
     alignment: AlignmentType.CENTER,
-    children: [new TextRun({ text: 'Susana · Numerologie & Astrologie', font: 'Georgia', size: 20, color: '5A4A40', italics: true })],
+    children: [new TextRun({ text: L.footerName, font: 'Georgia', size: 20, color: '5A4A40', italics: true })],
   }));
   children.push(new Paragraph({
     spacing: { before: 60, after: 60 },

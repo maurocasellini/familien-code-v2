@@ -10,6 +10,7 @@ export default function Home() {
       childCount: 1,
       lead: { name: '', email: '' },  // Lead-Gate
       ancestry: { include: false },    // Ahnenlinie (optional, Mutter + Vater)
+      language: 'de',                  // Output-Sprache: 'de' | 'en' | 'pt' (UI bleibt Deutsch)
     };
 
     // ── FLOW ───────────────────────────────────────────────────────
@@ -404,9 +405,23 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
       const ancestryBlock = buildAncestryBlock();
       const hasAncestry = ancestryBlock !== '';
 
-      return `Du bist ein erfahrener Astrologe und Numerologe. Erstelle eine tiefe, persönliche Analyse auf Deutsch, direkt ansprechend (du).
+      const langInstructions = {
+        de: 'SPRACHE: Schweizer Hochdeutsch. KEIN scharfes S (kein ß) -- IMMER ss schreiben (gross/muss/heisst/Schluss/Strasse/Spass). Diese Regel gilt fuer jedes Wort ohne Ausnahme.',
+        en: 'LANGUAGE: Write the entire analysis in English (modern, warm, informal "you"). Keep all structural markers as technical tags, but content inside markers should be in English.',
+        pt: 'IDIOMA: Escreve a análise inteira em português (preferencialmente europeu, caloroso, forma informal). Mantém os marcadores estruturais como etiquetas técnicas, mas o conteúdo dentro dos marcadores deve estar em português.',
+      };
+      const langInstr = langInstructions[state.language] || langInstructions.de;
 
-SPRACHE: Schweizer Hochdeutsch. KEIN scharfes S (kein ß) -- IMMER ss schreiben (gross/muss/heisst/Schluss/Strasse/Spass). Diese Regel gilt fuer jedes Wort ohne Ausnahme.
+      const intros = {
+        de: 'Du bist ein erfahrener Astrologe und Numerologe. Erstelle eine tiefe, persönliche Analyse auf Deutsch, direkt ansprechend (du).',
+        en: 'You are an experienced astrologer and numerologist. Create a deep, personal analysis in English, addressing the reader directly (you).',
+        pt: 'És um astrólogo e numerólogo experiente. Cria uma análise profunda e pessoal em português, falando diretamente com a pessoa (tu).',
+      };
+      const intro = intros[state.language] || intros.de;
+
+      return `${intro}
+
+${langInstr}
 
 KONSTELLATION: ${state.constellation}
 FOKUS: ${state.focus}
@@ -506,6 +521,7 @@ WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** u
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             messages: [{ role: 'user', content: buildPrompt() }],
+            language: state.language,
             lead: {
               name: state.lead.name,
               email: state.lead.email,
@@ -849,8 +865,8 @@ WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** u
     }
 
     function renderResult(text) {
-      // Defensiv: alle ß zu ss konvertieren (Schweizer Hochdeutsch)
-      text = String(text || '').replace(/ß/g, 'ss');
+      // Defensiv: ß → ss nur bei Deutsch (Schweizer Hochdeutsch)
+      if (state.language === 'de') text = String(text || '').replace(/ß/g, 'ss');
       const secs = text.split('~~~').map(s => s.trim()).filter(Boolean);
       const body = document.getElementById('result-body');
       if (!body) return;
@@ -892,7 +908,7 @@ WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** u
         const res = await fetch('/api/generate-docx', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ rawText, name }),
+          body: JSON.stringify({ rawText, name, language: state.language }),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
@@ -963,6 +979,18 @@ WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** u
 
     // ── EVENT DELEGATION ───────────────────────────────────────────
     document.addEventListener('click', (e) => {
+      // Language pills
+      const langPill = e.target.closest('.lang-pill');
+      if (langPill) {
+        const lang = langPill.dataset.lang;
+        if (lang) {
+          state.language = lang;
+          document.querySelectorAll('.lang-pill').forEach(p => p.classList.toggle('active', p.dataset.lang === lang));
+          const sw = document.getElementById('lang-switch');
+          if (sw) sw.dataset.lang = lang;
+        }
+        return;
+      }
       // Select cards
       const card = e.target.closest('.select-card');
       if (card) {
@@ -1333,6 +1361,31 @@ WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** u
           #ancestry-include-toggle .toggle-label { font-size: 13px; color: var(--ink); }
           #ancestry-fields.hidden { display: none; }
 
+          /* ── LANGUAGE SWITCH ─────────────────────────────────────── */
+          .lang-switch {
+            margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--gold-pale);
+            display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+          }
+          .lang-switch-label {
+            font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+            color: var(--silver); font-weight: 400;
+          }
+          .lang-pills { display: flex; gap: 8px; }
+          .lang-pill {
+            font-family: 'Raleway', sans-serif; font-size: 12px; font-weight: 400;
+            letter-spacing: 0.5px; padding: 8px 16px;
+            background: white; color: var(--muted); border: 1px solid var(--gold-pale);
+            border-radius: 999px; cursor: pointer; transition: all 0.15s;
+          }
+          .lang-pill:hover { border-color: var(--rose-light); color: var(--rose-light); }
+          .lang-pill.active {
+            background: var(--rose-light); color: white; border-color: var(--rose-light);
+          }
+          .lang-switch-note {
+            font-size: 11px; color: var(--silver); font-style: italic; line-height: 1.5;
+            max-width: 380px;
+          }
+
           /* ── PERSON SECTION ───────────────────────────────────── */
           .person-section { background: white; border: 1px solid var(--gold-pale); border-radius: 18px; padding: 36px 40px; margin-bottom: 20px; }
           .person-section-title {
@@ -1583,6 +1636,16 @@ WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** u
                 <span className="hero-cta-arrow">→</span>
               </button>
               <p className="hero-tagline">Für dich, dein/e Partner:in & deine Familie</p>
+
+              <div className="lang-switch" id="lang-switch" data-lang="de">
+                <span className="lang-switch-label">Sprache der Analyse</span>
+                <div className="lang-pills">
+                  <button className="lang-pill active" data-lang="de" type="button">Deutsch</button>
+                  <button className="lang-pill" data-lang="en" type="button">English</button>
+                  <button className="lang-pill" data-lang="pt" type="button">Português</button>
+                </div>
+                <span className="lang-switch-note">Die Webseite bleibt auf Deutsch — nur die Analyse und das Word-Dokument folgen der gewählten Sprache.</span>
+              </div>
             </div>
           </div>
           <div className="hero-right">
