@@ -399,7 +399,7 @@ ${hasNameChange ? `11. Namenswechsel & seine Energie — analysiere den/die Name
 12. Die Essenz — mit [ESSENZ:Ein einziger Satz der alles zusammenfasst]` : `11. Die Essenz — mit [ESSENZ:Ein einziger Satz der alles zusammenfasst]`}
 
 Schreibe tief, präzise, persönlich. Keine generischen Aussagen. Zahlen und astrologische Fakten exakt aus den gegebenen Daten ableiten.
-WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** und *kursiv* enthalten. Die Jahresenergien MÜSSEN als [JAHRES-TABELLE] formatiert sein — KEIN Fliesstext mit "**2026 (Jahr 6):**" statt Tabelle.
+WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** und *kursiv* enthalten. Die Jahresenergien MÜSSEN als [JAHRES-TABELLE] formatiert sein — KEIN Fliesstext mit "**2026 (Jahr 6):**" statt Tabelle.`;
     }
 
     // ── LOADING CYCLE ──────────────────────────────────────────────
