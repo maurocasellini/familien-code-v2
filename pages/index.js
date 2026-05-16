@@ -406,9 +406,9 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
       const hasAncestry = ancestryBlock !== '';
 
       const langInstructions = {
-        de: 'SPRACHE: Schweizer Hochdeutsch. KEIN scharfes S (kein ß) -- IMMER ss schreiben (gross/muss/heisst/Schluss/Strasse/Spass). Diese Regel gilt fuer jedes Wort ohne Ausnahme.',
-        en: 'LANGUAGE: Write the entire analysis in English (modern, warm, informal "you"). Keep all structural markers as technical tags, but content inside markers should be in English.',
-        pt: 'IDIOMA: Escreve a análise inteira em português (preferencialmente europeu, caloroso, forma informal). Mantém os marcadores estruturais como etiquetas técnicas, mas o conteúdo dentro dos marcadores deve estar em português.',
+        de: 'SPRACHE: Schweizer Hochdeutsch. KEIN scharfes S (kein ß), IMMER ss schreiben (gross/muss/heisst/Schluss/Strasse/Spass). STIL: KEINE Gedankenstriche (kein — kein –), verwende stattdessen Kommas, Doppelpunkte oder kurze Saetze. Bindestriche in zusammengesetzten Woertern sind OK.',
+        en: 'LANGUAGE: Write the entire analysis in English (modern, warm, informal "you"). STYLE: NO em-dashes (—) and NO en-dashes (–), use commas, colons, or short sentences instead. Hyphens in compound words are fine. Keep structural markers as technical tags, but content inside markers in English.',
+        pt: 'IDIOMA: Escreve a análise inteira em português (preferencialmente europeu, caloroso, forma informal). ESTILO: SEM travessões (sem — e sem –), usa vírgulas, dois-pontos ou frases curtas. Hífenes em palavras compostas estão bem. Mantém marcadores estruturais como etiquetas técnicas, mas conteúdo dentro em português.',
       };
       const langInstr = langInstructions[state.language] || langInstructions.de;
 
@@ -865,8 +865,12 @@ WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** u
     }
 
     function renderResult(text) {
+      text = String(text || '');
       // Defensiv: ß → ss nur bei Deutsch (Schweizer Hochdeutsch)
-      if (state.language === 'de') text = String(text || '').replace(/ß/g, 'ss');
+      if (state.language === 'de') text = text.replace(/ß/g, 'ss');
+      // Defensiv: AI-typische Em-Dashes / En-Dashes raus.
+      // Em-Dash (—) → Komma. En-Dash (–) → Hyphen.
+      text = text.replace(/\s*—\s*/g, ', ').replace(/\s*–\s*/g, '-');
       const secs = text.split('~~~').map(s => s.trim()).filter(Boolean);
       const body = document.getElementById('result-body');
       if (!body) return;

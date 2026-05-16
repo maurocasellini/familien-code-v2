@@ -141,8 +141,15 @@ export default async function handler(req, res) {
 
   const lang = (language === 'en' || language === 'pt') ? language : 'de';
   const L = LOCALE_LABELS[lang];
-  // ss-Filter only applies to German output
-  const filterText = (s) => lang === 'de' ? ss(s) : String(s || '');
+  // Defensive style filters:
+  // - ß → ss only for German
+  // - Em-Dash (—) → comma, En-Dash (–) → hyphen (everywhere, all languages)
+  const filterText = (s) => {
+    let t = String(s || '');
+    if (lang === 'de') t = t.replace(/ß/g, 'ss');
+    t = t.replace(/\s*—\s*/g, ', ').replace(/\s*–\s*/g, '-');
+    return t;
+  };
 
   const displayName = filterText(name || (lang === 'en' ? 'Your Analysis' : lang === 'pt' ? 'A Tua Análise' : 'Deine Analyse'));
 
