@@ -850,6 +850,7 @@ WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** u
       const secs = text.split('~~~').map(s => s.trim()).filter(Boolean);
       const body = document.getElementById('result-body');
       if (!body) return;
+      body.dataset.rawText = text;  // store for DOCX export
       body.innerHTML = secs.map((sec, idx) => {
         const lines = sec.split('\n');
         const titleRaw = lines[0].replace(/^#+\s*/, '').trim();
@@ -872,6 +873,42 @@ WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** u
     function renderError(msg) {
       const body = document.getElementById('result-body');
       if (body) body.innerHTML = `<div class="error-box">⚠ ${esc(msg)}<br><small>Bitte versuche es erneut.</small></div>`;
+    }
+
+    async function downloadDocx() {
+      const body = document.getElementById('result-body');
+      const rawText = body?.dataset.rawText || '';
+      if (!rawText) { alert('Noch keine Analyse vorhanden.'); return; }
+      const nameEl = document.getElementById('result-name');
+      const name = nameEl?.textContent?.trim() || 'Deine Analyse';
+      const btn = document.getElementById('btn-docx');
+      const originalLabel = btn ? btn.textContent : '';
+      if (btn) { btn.disabled = true; btn.textContent = 'Wird vorbereitet…'; }
+      try {
+        const res = await fetch('/api/generate-docx', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rawText, name }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const safe = name.replace(/[^a-zA-Z0-9_\- ]+/g, '').replace(/\s+/g, '_') || 'Analyse';
+        a.download = `Familien-Code_${safe}.docx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        alert('Word-Export fehlgeschlagen: ' + err.message);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = originalLabel; }
+      }
     }
 
     // ── RESET ──────────────────────────────────────────────────────
@@ -963,6 +1000,7 @@ WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** u
         if (btn.classList.contains('btn-next-generic')) goNext();
         if (id === 'hero-cta-btn') goNext();
         if (id === 'btn-print') window.print();
+        if (id === 'btn-docx') downloadDocx();
         if (id === 'btn-reset-result') resetAll();
       }
     });
@@ -1884,6 +1922,7 @@ WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** u
         </div>
         <div className="result-content" id="result-body"></div>
         <div className="result-actions">
+          <button className="btn-primary gold" id="btn-docx">↓ Als Word herunterladen</button>
           <button className="btn-primary" id="btn-print">↓ Als PDF speichern</button>
           <button className="btn-ghost" id="btn-reset-result">Neue Analyse starten</button>
         </div>
