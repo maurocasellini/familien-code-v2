@@ -406,6 +406,8 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
 
       return `Du bist ein erfahrener Astrologe und Numerologe. Erstelle eine tiefe, persönliche Analyse auf Deutsch, direkt ansprechend (du).
 
+SPRACHE: Schweizer Hochdeutsch. KEIN scharfes S (kein ß) -- IMMER ss schreiben (gross/muss/heisst/Schluss/Strasse/Spass). Diese Regel gilt fuer jedes Wort ohne Ausnahme.
+
 KONSTELLATION: ${state.constellation}
 FOKUS: ${state.focus}
 ${personBlock(p1, 'PERSON 1')}
@@ -847,6 +849,8 @@ WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** u
     }
 
     function renderResult(text) {
+      // Defensiv: alle ß zu ss konvertieren (Schweizer Hochdeutsch)
+      text = String(text || '').replace(/ß/g, 'ss');
       const secs = text.split('~~~').map(s => s.trim()).filter(Boolean);
       const body = document.getElementById('result-body');
       if (!body) return;

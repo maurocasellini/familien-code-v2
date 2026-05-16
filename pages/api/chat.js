@@ -52,6 +52,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: 'claude-opus-4-5',
         max_tokens: 8192,
+        system: 'Du bist eine erfahrene Astrologin und Numerologin. Schreibe AUSSCHLIESSLICH in Schweizer Hochdeutsch: KEIN scharfes S (kein ß) -- schreibe immer ss statt ß. Also: "muss" statt "muß", "gross" statt "groß", "weiss" statt "weiß", "Strasse" statt "Straße", "heisst" statt "heißt", "Schluss" statt "Schluß", "Fluss" statt "Fluß", "Schloss" statt "Schloß", "Spass" statt "Spaß". Diese Regel gilt fuer JEDES Wort, JEDEN Satz, JEDE Sektion -- ohne Ausnahme. Schreibe tief, persoenlich und konkret. Jede Analyse soll sich wie ein persoenliches Gespraech anfuehlen. Sei grosszuegig mit Laenge und Detail.',
         messages,
       }),
     });
