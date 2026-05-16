@@ -9,6 +9,7 @@ export default function Home() {
       focus: '',
       childCount: 1,
       lead: { name: '', email: '' },  // Lead-Gate
+      ancestry: { include: false },    // Ahnenlinie (optional, Mutter + Vater)
     };
 
     // ── FLOW ───────────────────────────────────────────────────────
@@ -18,7 +19,7 @@ export default function Home() {
       let f = ['splash', 'lead', 'constellation', 'person1'];
       if (hasPair) f.push('person2', 'couple');
       if (hasKids) f.push('children');
-      f.push('focus', 'loading', 'result');
+      f.push('ancestry', 'focus', 'loading', 'result');
       return f;
     }
 
@@ -253,6 +254,66 @@ export default function Home() {
       return out;
     }
 
+    // ── AHNENLINIE ──────────────────────────────────────────────────
+    function getAncestor(prefix) {
+      // prefix: 'mother' or 'father'
+      return {
+        firstName: val(`anc-${prefix}-first`),
+        birthName: val(`anc-${prefix}-birth`),     // Geburtsname / Mädchenname
+        birthDate: val(`anc-${prefix}-date`),
+        birthPlace: val(`anc-${prefix}-place`),
+      };
+    }
+    function getAncestry() {
+      const include = isOn('ancestry-include-toggle');
+      if (!include) return { include: false };
+      const m = getAncestor('mother');
+      const f = getAncestor('father');
+      const hasAny = (m.firstName || m.birthName || m.birthDate) || (f.firstName || f.birthName || f.birthDate);
+      return { include: hasAny, mother: m, father: f };
+    }
+    function ancestorLine(label, a) {
+      if (!a) return '';
+      if (!a.firstName && !a.birthName && !a.birthDate) return '';
+      const fullForNums = `${a.firstName || ''} ${a.birthName || ''}`.trim();
+      const nn = fullForNums ? nameNums(fullForNums) : null;
+      const lz = a.birthDate ? lifeNum(a.birthDate) : 'n/a';
+      const py = a.birthDate ? persYear(a.birthDate) : 'n/a';
+      const zd = a.birthDate ? zodiac(a.birthDate) : 'unbekannt';
+      return `
+${label}:
+- Vorname: ${a.firstName || '—'}
+- Geburtsname: ${a.birthName || '—'}
+- Geburtsdatum: ${a.birthDate || '—'}
+- Geburtsort: ${a.birthPlace || '—'}
+- Lebenszahl: ${lz}
+- Persoenliches Jahr: ${py}
+- Sternzeichen: ${zd}${nn ? `
+- Namens-Numerologie (Vorname + Geburtsname): Seelendrang=${nn.soul}, Persoenlichkeit=${nn.personality}, Ausdruck=${nn.expression}` : ''}`;
+    }
+    function buildAncestryBlock() {
+      const a = getAncestry();
+      if (!a.include) return '';
+      const mLine = ancestorLine('MUTTER (Mutterlinie — die naehrende, empfangende Frequenz)', a.mother);
+      const fLine = ancestorLine('VATER (Vaterlinie — die schuetzende, strukturierende Frequenz)', a.father);
+      if (!mLine && !fLine) return '';
+      // Pattern detection: matching life numbers between mother/father and main person
+      const mLz = a.mother?.birthDate ? lifeNum(a.mother.birthDate) : null;
+      const fLz = a.father?.birthDate ? lifeNum(a.father.birthDate) : null;
+      const p1Lz = lifeNum(val('p1-date'));
+      let pattern = '';
+      if (mLz && fLz && p1Lz && p1Lz !== 'n/a') {
+        const matches = [];
+        if (mLz === p1Lz) matches.push(`Mutter (${mLz}) und Hauptperson (${p1Lz}) teilen dieselbe Lebenszahl — eine starke energetische Resonanz`);
+        if (fLz === p1Lz) matches.push(`Vater (${fLz}) und Hauptperson (${p1Lz}) teilen dieselbe Lebenszahl — der vaeterliche Auftrag schwingt direkt mit`);
+        if (mLz === fLz) matches.push(`Mutter und Vater teilen dieselbe Lebenszahl (${mLz}) — das Familienthema ist verdoppelt im System`);
+        if (matches.length) pattern = `\n\nMUSTER-ERKENNUNG:\n- ${matches.join('\n- ')}`;
+      }
+      return `
+
+AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${fLine}${pattern}`;
+    }
+
     // ── NUMEROLOGIE ────────────────────────────────────────────────
     const LM = { A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, H: 8, I: 9, J: 1, K: 2, L: 3, M: 4, N: 5, O: 6, P: 7, Q: 8, R: 9, S: 1, T: 2, U: 3, V: 4, W: 5, X: 6, Y: 7, Z: 8 };
     const VO = new Set(['A', 'E', 'I', 'O', 'U']);
@@ -340,6 +401,9 @@ export default function Home() {
       const nn2 = hasPair && p2 ? calcNameNums(p2.firstName, p2.lastName) : null;
       const nnKids = hasKids ? getChildren().map(c => calcNameNums(c.firstName, c.lastName)) : [];
 
+      const ancestryBlock = buildAncestryBlock();
+      const hasAncestry = ancestryBlock !== '';
+
       return `Du bist ein erfahrener Astrologe und Numerologe. Erstelle eine tiefe, persönliche Analyse auf Deutsch, direkt ansprechend (du).
 
 KONSTELLATION: ${state.constellation}
@@ -355,6 +419,7 @@ VORBERECHNETE NAMEN-NUMEROLOGIE (diese Zahlen sind korrekt — verwende sie exak
 ${nameNumsText(nn1, 'PERSON 1')}
 ${nn2 ? nameNumsText(nn2, 'PERSON 2') : ''}
 ${nnKids.map((nn, i) => nameNumsText(nn, `KIND ${i+1}`)).join('\n')}
+${ancestryBlock}
 
 Gib die Analyse als strukturierten Text zurück. Trenne Sektionen mit ~~~.
 Jede Sektion beginnt mit dem Titel, dann einem Zeilenumbruch, dann dem Inhalt.
@@ -395,7 +460,8 @@ ${state.constellation === 'family' ? `6. Das Familiensystem — Fliesstext mit R
 8. Jahresenergien 2025–2030 — mit [JAHRES-TABELLE:...] und [JAHR:...] Zeilen
 9. Pinnacles & Challenges — mit [PINNACLE:...] für jede Person
 10. Namen-Numerologie — mit [NAMEN-GRID-START/END]
-${hasNameChange ? `11. Namenswechsel & seine Energie — analysiere den/die Namenswechsel: was verändert sich numerologisch? Welche Energie kommt, welche geht? Verwende [NAMEN-GRID-START/END] für den Vergleich.
+${hasAncestry ? `${hasNameChange ? '11a' : '11'}. Die Ahnenlinie — was aus deiner Familie mitschwingt. Analysiere mit den ANGEGEBENEN Daten zu Mutter und/oder Vater: wiederholende Lebenszahlen ueber Generationen (z.B. Mutter LZ 11, Kind LZ 11 = Familienmuster), Mutterlinie (naehrend, empfangend) vs. Vaterlinie (schuetzend, strukturierend), kulturelle/energetische Herkunftslinie (Geburtsort), was die Hauptperson aus dem System weitertraegt oder transformiert. KEINE Aussagen ueber nicht angegebene Vorfahren. Schreibe als Fliesstext, integriere die berechneten Zahlen organisch.
+` : ''}${hasNameChange ? `11. Namenswechsel & seine Energie — analysiere den/die Namenswechsel: was verändert sich numerologisch? Welche Energie kommt, welche geht? Verwende [NAMEN-GRID-START/END] für den Vergleich.
 12. Die Essenz — mit [ESSENZ:Ein einziger Satz der alles zusammenfasst]` : `11. Die Essenz — mit [ESSENZ:Ein einziger Satz der alles zusammenfasst]`}
 
 Schreibe tief, präzise, persönlich. Keine generischen Aussagen. Zahlen und astrologische Fakten exakt aus den gegebenen Daten ableiten.
@@ -868,6 +934,15 @@ WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** u
       // Toggle rows
       const toggleRow = e.target.closest('.toggle-row');
       if (toggleRow) {
+        // Special: ancestry include toggle (shows/hides the fields)
+        if (toggleRow.id === 'ancestry-include-toggle') {
+          const on = toggleRow.classList.toggle('on');
+          const box = toggleRow.querySelector('.toggle-box');
+          if (box) box.classList.toggle('on', on);
+          const fields = document.getElementById('ancestry-fields');
+          if (fields) fields.classList.toggle('hidden', !on);
+          return;
+        }
         const inputId = toggleRow.dataset.toggleInput;
         const toggleId = toggleRow.dataset.toggleId;
         if (inputId && toggleId) toggleField(inputId, toggleId);
@@ -1200,6 +1275,21 @@ WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** u
           .toggle-box.on { background: var(--rose); }
           .toggle-box::after { content: ''; position: absolute; width: 15px; height: 15px; border-radius: 50%; background: white; top: 2px; left: 2px; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
           .toggle-box.on::after { transform: translateX(15px); }
+
+          /* ── AHNENLINIE ──────────────────────────────────────────── */
+          .ancestor-block {
+            background: white; border: 1px solid var(--gold-pale); border-radius: 18px;
+            padding: 32px 36px; margin-top: 24px;
+          }
+          .ancestor-block:first-of-type { margin-top: 32px; }
+          .form-h3 {
+            font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 500;
+            color: var(--rose-light); margin: 0 0 24px 0; padding-bottom: 12px;
+            border-bottom: 1px solid var(--gold-pale);
+          }
+          #ancestry-include-toggle { margin-top: 24px; padding: 14px 18px; background: var(--gold-faint); border: 1px solid var(--gold-pale); border-radius: 14px; }
+          #ancestry-include-toggle .toggle-label { font-size: 13px; color: var(--ink); }
+          #ancestry-fields.hidden { display: none; }
 
           /* ── PERSON SECTION ───────────────────────────────────── */
           .person-section { background: white; border: 1px solid var(--gold-pale); border-radius: 18px; padding: 36px 40px; margin-bottom: 20px; }
@@ -1671,6 +1761,69 @@ WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** u
           </div>
           <div id="children-container"></div>
           <button className="btn-add" id="btn-add-child">+ Weiteres Kind hinzufügen</button>
+          <div className="form-footer">
+            <button className="btn-back">← Zurück</button>
+            <button className="btn-primary btn-next-generic">Weiter →</button>
+          </div>
+        </div>
+      </div>
+
+      {/* SCREEN 5b: AHNENLINIE (optional) */}
+      <div className="screen" id="screen-ancestry">
+        <div className="form-page">
+          <div className="form-page-header">
+            <div className="form-eyebrow">Optional · Ahnenlinie</div>
+            <h2 className="form-h2">Was aus deiner Familie<br/>mitschwingt</h2>
+            <p className="form-sub">Optional: Gib die Daten von Mutter und/oder Vater ein, um wiederkehrende Muster und Themen aus dem Familiensystem in die Analyse einfliessen zu lassen. Alle Felder freiwillig — was du nicht weisst, lass leer.</p>
+          </div>
+
+          <div className="toggle-row" id="ancestry-include-toggle">
+            <span className="toggle-label">Ahnenlinie einbeziehen</span>
+            <span className="toggle-box"></span>
+          </div>
+
+          <div id="ancestry-fields" className="hidden">
+            <div className="ancestor-block">
+              <h3 className="form-h3">Mutter</h3>
+              <div className="field-group">
+                <label className="field-label">Vorname (Taufname)</label>
+                <input className="field-input" id="anc-mother-first" type="text" placeholder="z.B. Maria" />
+              </div>
+              <div className="field-group">
+                <label className="field-label">Geburtsname (Mädchenname)</label>
+                <input className="field-input" id="anc-mother-birth" type="text" placeholder="Der numerologisch reinste Name der Mutterlinie" />
+              </div>
+              <div className="field-group">
+                <label className="field-label">Geburtsdatum</label>
+                <input className="field-input" id="anc-mother-date" type="text" placeholder="TT.MM.JJJJ" />
+              </div>
+              <div className="field-group">
+                <label className="field-label">Geburtsort (Stadt, Land)</label>
+                <input className="field-input" id="anc-mother-place" type="text" placeholder="z.B. Lugano, Schweiz" />
+              </div>
+            </div>
+
+            <div className="ancestor-block">
+              <h3 className="form-h3">Vater</h3>
+              <div className="field-group">
+                <label className="field-label">Vorname (Taufname)</label>
+                <input className="field-input" id="anc-father-first" type="text" placeholder="z.B. Giovanni" />
+              </div>
+              <div className="field-group">
+                <label className="field-label">Geburtsname</label>
+                <input className="field-input" id="anc-father-birth" type="text" placeholder="Nachname bei Geburt" />
+              </div>
+              <div className="field-group">
+                <label className="field-label">Geburtsdatum</label>
+                <input className="field-input" id="anc-father-date" type="text" placeholder="TT.MM.JJJJ" />
+              </div>
+              <div className="field-group">
+                <label className="field-label">Geburtsort (Stadt, Land)</label>
+                <input className="field-input" id="anc-father-place" type="text" placeholder="z.B. Bellinzona, Schweiz" />
+              </div>
+            </div>
+          </div>
+
           <div className="form-footer">
             <button className="btn-back">← Zurück</button>
             <button className="btn-primary btn-next-generic">Weiter →</button>
