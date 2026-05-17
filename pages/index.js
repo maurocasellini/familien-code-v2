@@ -596,7 +596,7 @@ Für Beziehungs-Dynamik: [DYNAMIK:SIE-Label|SIE-Zahl|ER-Label|ER-Zahl|Resonanz-T
 Für astrologische Verbindungen als Karten: [ASTRO-START] ... [ASTRO:Symbol|Titel|Text] ... [ASTRO-END]
 Für Herausforderung & Schlüssel 2-spaltig: [HS-START] ... [HERAUSFORDERUNG:Text] ... [SCHLUESSEL:Text] ... [HS-END]
 Für Jahresenergien-Tabelle: Nur so viele Spalten wie tatsächlich Personen vorhanden sind. Verwende: [JAHRES-TABELLE:${[p1.firstName, hasPair && p2?.firstName, ...(hasKids ? getChildren().map(c => c.firstName) : [])].filter(Boolean).join('|')}] gefolgt von Zeilen: [JAHR:Jahr-Bereich|Zahl·Keyword${hasPair ? '|Zahl·Keyword' : ''}${hasKids ? getChildren().map(() => '|Zahl·Keyword').join('') : ''}]. Verwende die ECHTEN, vorberechneten PJ-Werte aus dem PERSOENLICHES JAHR IM DETAIL-Block oben (nicht halluzinieren). Jahr-Bereich-Format: gib den Geburtstag-zu-Geburtstag Zeitraum an, z.B. "11/2025 bis 11/2026" statt "2025". Liste 6 Jahre auf, beginnend mit dem aktuell aktiven PJ.
-Für Pinnacles: [PINNACLE:Person|Nummer|Zeitraum|Zahl|Beschreibung|Challenge]
+Für Pinnacles: [PINNACLE:Person|Nummer|Zeitraum|Zahl|Beschreibung|Challenge]. Im Zeitraum-Feld IMMER zwei Formate kombinieren: "0 bis 26 Jahre (1987 bis 2013)" oder "ab 36 Jahre (ab 2023)" oder "27 bis 35 Jahre (2014 bis 2022)". Berechne die Jahreszahlen exakt aus dem Geburtsjahr der Person + Alter.
 Für Namen-Numerologie Cards: [NAMEN-GRID-START] ... [NAMEN-CARD:Name|Rolle|Seelendrang-Zahl|Seelendrang-Label|Pers-Zahl|Pers-Label|Ausdruck-Zahl|Ausdruck-Label|Beschreibung] ... [NAMEN-GRID-END]
 PFLICHTREGELN für NAMEN-CARD:
 - Name = vollständiger Name in normaler Schreibweise, KEINE Bindestriche zwischen Buchstaben (richtig: "Mauro Casellini", falsch: "M-A-U-R-O")
@@ -621,19 +621,28 @@ ${state.constellation === 'family' ? `6. Das Familiensystem — Fliesstext mit R
 ` : ''}
 7. Herausforderung & Schlüssel — mit [HS-START/END]
 
-8. Dein aktuelles Persoenliches Jahr im Detail — die HERZSTUECK-Sektion. Schreibe als persoenlichen Fliesstext, gegliedert nach Quartalen oder Phasen (NICHT Monat fuer Monat einzeln). Verwende die vorberechneten PJ- und PM-Daten aus dem PERSOENLICHES JAHR IM DETAIL-Block oben:
-   - Beginne mit dem Gesamt-Thema des aktuellen PJ (welche Energie, was wird gefordert, was wird geschenkt)
-   - Gliedere die 12 Monate in 4 Quartale (Q1 = Geburtstagsmonat + 2 folgende, Q2 = naechste 3, Q3 = naechste 3, Q4 = letzte 3 vor dem nachfolgenden Geburtstag). Verwende fuer jedes Quartal einen Sub-Header (z.B. "Erste Quartalsphase: November 2025 bis Januar 2026") und beschreibe die energetische Bewegung, die Schwellenmonate, die konkreten Themen
-   - Hebe Schwellenmonate explizit hervor: Verdichtungsmonate (wo PM = PJ), Meistermonate (PM 11/22/33), Lebensaufgabe-Echo-Monate (wo PM = LZ)
-   - Markiere den Halbjahres-Wechsel um den Geburtstag herum (sechs Monate nach Start ist der Halbjahres-Wendepunkt)
-   - Wenn der UEBERGANGSPHASE-Hinweis im Datenblock steht: erwaehne explizit dass die Person aktuell in dieser energetischen Vermischung steht und was das praktisch bedeutet
-   - Schliesse mit dem naechsten Geburtstag als Wechselpunkt: was kommt mit dem neuen PJ, was kann man jetzt schon spueren
-   - Sei konkret und praktisch: was tun, was lassen, wann handeln, wann ruhen
-   - Mindestens 600 Woerter Tiefe in dieser Sektion
+8. Dein aktuelles Persoenliches Jahr im Detail — DIE LAENGSTE und DETAILLIERTESTE Sektion der ganzen Analyse. PFLICHT-AUFBAU:
 
-9. Vorausschau auf die naechsten zwei Persoenlichen Jahre — kurz aber substanziell (je ein Abschnitt). Beginne mit dem konkreten Wechseldatum (Geburtstag), dann zwei bis drei Saetze zum Hauptthema. Verwende die vorberechneten naechsten PJs.
+   (a) Beginne mit dem Marker [PJ-HEADER:Dein aktuelles Persoenliches Jahr|PJ-Zahl|Startdatum bis Enddatum]. Beispiel: [PJ-HEADER:Dein aktuelles Persoenliches Jahr|22|02.11.2025 bis 02.11.2026]. Diese Werte exakt aus dem PERSOENLICHES JAHR IM DETAIL-Block oben uebernehmen, NICHT erfinden.
+   
+   (b) Dann ein Eroeffnungs-Absatz von 150 bis 200 Woertern: das Gesamt-Thema des PJ, welche Energie ist dominant, was wird gefordert, was wird geschenkt, wie passt es zum Lebensthema der Person.
+   
+   (c) Dann VIER Quartals-Bloecke. Jeder Block beginnt mit dem Marker [QUARTAL:Titel|Zeitraum]. Beispiele:
+       [QUARTAL:Erste Phase: Aufbau und Aussaat|November 2025 bis Januar 2026]
+       [QUARTAL:Zweite Phase: Vertiefung|Februar bis April 2026]
+       [QUARTAL:Dritte Phase: Ernte|Mai bis Juli 2026]
+       [QUARTAL:Vierte Phase: Vollendung|August bis Oktober 2026]
+   Pro Quartal mindestens 120 Woerter Fliesstext, der die Bewegung des Quartals beschreibt: was ist das Hauptthema, welche Monate stechen heraus, was empfiehlt sich.
+   
+   (d) Innerhalb der Quartale: fuer Schwellenmonate (Verdichtungsmonat, Meistermonat, Lebensaufgabe-Echo) den Marker [HIGHLIGHT-MONAT:Kalendermonat Jahr|PM-Zahl|Was geschieht in diesem Monat]. Beispiel: [HIGHLIGHT-MONAT:November 2025|33|Meisterzahl-Monat — die hoechste Bauenergie des ganzen Jahres, ein Tor]
+   
+   (e) Ein Abschluss-Absatz (mindestens 100 Woerter) zur Uebergangsphase: wie der Wechsel zum naechsten PJ am naechsten Geburtstag spuerbar wird, was JETZT schon vorbereitet werden kann. Wenn der UEBERGANGSPHASE-Hinweis im Datenblock aktiv ist, explizit erwaehnen.
+   
+   ZIELLAENGE GESAMT: mindestens 900 Woerter in dieser einen Sektion. KEINE generischen Numerologie-Phrasen, jede Aussage muss an die konkreten Daten der Person ankoppeln. Schreibe wie eine erfahrene Beraterin, die Zeit hat.
 
-10. Jahresenergien-Vergleich aller Personen — mit [JAHRES-TABELLE:...] und [JAHR:...] Zeilen ueber 6 Jahre, geburtstagsbasiert (siehe Markierungsregel oben). Die Tabelle bietet den schnellen Querblick fuer Pair / Family / Kids.
+9. Dein naechstes Persoenliches Jahr — etwa 200 Woerter. Beginne mit dem Marker [PJ-HEADER:Dein naechstes Persoenliches Jahr|PJ-Zahl|Startdatum bis Enddatum]. Dann ein substanzieller Absatz zum Hauptthema, dem Wechsel-Charakter und was sich konkret aendert. Optional ein zweiter, kuerzerer Absatz zum uebernaechsten PJ als Ausblick.
+
+10. Jahresenergien-Tabelle — Querblick ueber alle Personen, mit [JAHRES-TABELLE:...] und [JAHR:...] Zeilen ueber 6 Jahre, geburtstagsbasiert. Format Jahr-Bereich: "11/2025 bis 11/2026" (Geburtsmonat als Anker).
 
 11. Pinnacles & Challenges — mit [PINNACLE:...] für jede Person. Identifiziere welcher Pinnacle aktuell aktiv ist und ob im aktuellen oder naechsten PJ ein Pinnacle-Wechsel ansteht.
 
@@ -722,6 +731,15 @@ WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** u
       // [ZAHL:X] → big number display
       text = text.replace(/\[ZAHL:([^\]]+)\]/g, (_, z) =>
         `<div class="res-big-zahl">${esc(z)}</div>`);
+      // [PJ-HEADER:Titel|Zahl|Zeitraum] → prominent block header
+      text = text.replace(/\[PJ-HEADER:([^|]+)\|([^|]+)\|([^\]]+)\]/g, (_, titel, zahl, zeitraum) =>
+        `<div class="res-pj-header"><div class="res-pj-header-eyebrow">${esc(titel)}</div><div class="res-pj-header-zahl">${esc(zahl)}</div><div class="res-pj-header-zeitraum">${esc(zeitraum)}</div></div>`);
+      // [QUARTAL:Titel|Zeitraum] → subtle quarterly sub-header
+      text = text.replace(/\[QUARTAL:([^|]+)\|([^\]]+)\]/g, (_, titel, zeitraum) =>
+        `<div class="res-quartal"><span class="res-quartal-titel">${esc(titel)}</span><span class="res-quartal-zeit">${esc(zeitraum)}</span></div>`);
+      // [HIGHLIGHT-MONAT:Monat|PM-Zahl|Label] → highlighted month chip
+      text = text.replace(/\[HIGHLIGHT-MONAT:([^|]+)\|([^|]+)\|([^\]]+)\]/g, (_, monat, zahl, label) =>
+        `<div class="res-highlight-monat"><span class="res-hm-zahl">${esc(zahl)}</span><div class="res-hm-body"><div class="res-hm-monat">${esc(monat)}</div><div class="res-hm-label">${esc(label)}</div></div></div>`);
       return text;
     }
 
@@ -1738,6 +1756,58 @@ WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** u
             background: linear-gradient(135deg, var(--rose-pale) 0%, var(--gold-faint) 100%);
             border-radius: 18px; border: 1px solid rgba(196,132,158,0.25); margin: 14px 0;
           }
+
+          /* ── PJ HEADER (Dein aktuelles Jahr) ───────────────────── */
+          .res-pj-header {
+            margin: 28px 0 18px 0; padding: 36px 32px;
+            background: linear-gradient(135deg, var(--rose-pale) 0%, var(--gold-faint) 100%);
+            border: 1px solid rgba(196,132,158,0.30); border-radius: 18px;
+            display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 24px;
+          }
+          .res-pj-header-eyebrow {
+            grid-column: 1; grid-row: 1;
+            font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase;
+            color: var(--rose-light); font-weight: 400; margin-bottom: 6px;
+          }
+          .res-pj-header-zeitraum {
+            grid-column: 1; grid-row: 2;
+            font-family: 'Playfair Display', serif; font-size: 22px; font-style: italic;
+            color: var(--ink); line-height: 1.3;
+          }
+          .res-pj-header-zahl {
+            grid-column: 2; grid-row: 1 / 3;
+            font-family: 'Playfair Display', serif; font-size: 88px; font-weight: 400;
+            color: var(--rose); line-height: 1; font-style: italic;
+            display: flex; align-items: center;
+          }
+
+          /* ── QUARTAL Sub-Header ──────────────────────────────── */
+          .res-quartal {
+            margin: 32px 0 14px 0; padding-bottom: 10px;
+            border-bottom: 1px solid var(--gold-pale);
+            display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+          }
+          .res-quartal-titel {
+            font-family: 'Playfair Display', serif; font-size: 20px; color: var(--ink); font-style: italic;
+          }
+          .res-quartal-zeit {
+            font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+            color: var(--silver); font-weight: 400;
+          }
+
+          /* ── HIGHLIGHT MONAT ─────────────────────────────────── */
+          .res-highlight-monat {
+            display: grid; grid-template-columns: 60px 1fr; gap: 18px;
+            margin: 14px 0; padding: 14px 18px;
+            background: white; border-left: 3px solid var(--rose-light);
+            border-radius: 8px; align-items: center;
+          }
+          .res-hm-zahl {
+            font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 400;
+            color: var(--rose); font-style: italic; text-align: center; line-height: 1;
+          }
+          .res-hm-monat { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--rose-light); margin-bottom: 3px; }
+          .res-hm-label { font-family: 'Playfair Display', serif; font-style: italic; font-size: 15px; color: var(--ink); line-height: 1.5; }
 
           /* ── MOBILE ───────────────────────────────────────────── */
           @media (max-width: 860px) {

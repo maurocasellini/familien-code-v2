@@ -63,6 +63,15 @@ function stripMarkers(text) {
   t = t.replace(/\[ZAHL:([^\]]+)\]/g, (_, num) => `\n  ⟨ ${num} ⟩\n`);
   // [ESSENZ:Text]
   t = t.replace(/\[ESSENZ:([^\]]+)\]/g, (_, txt) => `\n${txt}\n`);
+  // [PJ-HEADER:Titel|Zahl|Zeitraum] → visible block in Word
+  t = t.replace(/\[PJ-HEADER:([^|]+)\|([^|]+)\|([^\]]+)\]/g, (_, titel, zahl, zeitraum) =>
+    `\n${titel.toUpperCase()}\n${zahl}\n${zeitraum}\n`);
+  // [QUARTAL:Titel|Zeitraum] → subtle Header in Word
+  t = t.replace(/\[QUARTAL:([^|]+)\|([^\]]+)\]/g, (_, titel, zeit) =>
+    `\n${titel} (${zeit})\n`);
+  // [HIGHLIGHT-MONAT:Monat|Zahl|Label] → bullet in Word
+  t = t.replace(/\[HIGHLIGHT-MONAT:([^|]+)\|([^|]+)\|([^\]]+)\]/g, (_, monat, zahl, label) =>
+    `  • ${monat} (PM ${zahl}): ${label}`);
   // Collapse 3+ blank lines
   t = t.replace(/\n{3,}/g, '\n\n');
   return t;
