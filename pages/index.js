@@ -11,6 +11,7 @@ export default function Home() {
       lead: { name: '', email: '' },  // Lead-Gate
       ancestry: { include: false },    // Ahnenlinie (optional, Mutter + Vater)
       language: 'de',                  // Output-Sprache: 'de' | 'en' | 'pt' (UI bleibt Deutsch)
+      depth: 15,                       // Zielseiten 5-40, beeinflusst Token-Budget + Sektionslängen
     };
 
     // ── FLOW ───────────────────────────────────────────────────────
@@ -20,7 +21,7 @@ export default function Home() {
       let f = ['splash', 'constellation', 'person1'];
       if (hasPair) f.push('person2', 'couple');
       if (hasKids) f.push('children');
-      f.push('ancestry', 'focus', 'loading', 'result');
+      f.push('ancestry', 'depth', 'focus', 'loading', 'result');
       return f;
     }
 
@@ -153,8 +154,14 @@ export default function Home() {
             <input class="field-input" id="${prefix}-firstname" placeholder="Taufname/n" />
           </div>
           <div class="field-group">
-            <label class="field-label">Nachname</label>
+            <label class="field-label">Nachname (aktuell)</label>
             <input class="field-input" id="${prefix}-lastname" placeholder="Nachname" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label">Geburtsname <span class="field-hint">(nur ausfüllen falls anders als aktueller Nachname, z.B. bei Heirat)</span></label>
+            <input class="field-input" id="${prefix}-birthname" placeholder="Geburtsname (optional)" />
           </div>
         </div>
         <div class="field-row-3">
@@ -191,8 +198,14 @@ export default function Home() {
               <input class="field-input" id="${p}-firstname" placeholder="Taufname/n" />
             </div>
             <div class="field-group">
-              <label class="field-label">Nachname</label>
+              <label class="field-label">Nachname (aktuell)</label>
               <input class="field-input" id="${p}-lastname" placeholder="Nachname" />
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label">Geburtsname <span class="field-hint">(falls anders als aktueller Nachname)</span></label>
+              <input class="field-input" id="${p}-birthname" placeholder="Geburtsname (optional)" />
             </div>
           </div>
           <div class="field-row-3">
@@ -242,6 +255,7 @@ export default function Home() {
       return {
         firstName: val(`${prefix}-firstname`),
         lastName: val(`${prefix}-lastname`),
+        birthName: val(`${prefix}-birthname`),
         birthDate: val(`${prefix}-birthdate`),
         birthTime: isOn(`${prefix}-notime`) ? 'unbekannt' : (val(`${prefix}-birthtime`) || 'unbekannt'),
         birthPlace: val(`${prefix}-birthplace`)
@@ -703,12 +717,17 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
     function personBlock(p, label) {
       if (!p.firstName) return '';
       const full = `${p.firstName} ${p.lastName}`.trim();
+      const birthFull = p.birthName ? `${p.firstName} ${p.birthName}`.trim() : null;
       const n = nameNums(full);
+      const nBirth = birthFull ? nameNums(birthFull) : null;
       const pjInfo = getPersonalYearInfo(p.birthDate);
       const pjStr = pjInfo
         ? `${pjInfo.currentPJ} (aktiv vom ${pjInfo.startDate} bis ${pjInfo.endDate})`
         : 'n/a';
-      return `\n${label}: ${full}\n- Geburtsdatum: ${p.birthDate || 'unbekannt'}\n- Geburtszeit: ${p.birthTime || 'unbekannt'}\n- Geburtsort: ${p.birthPlace || 'unbekannt'}\n- Lebenszahl: ${lifeNum(p.birthDate)}\n- Seelendrang: ${n.soul}\n- Persönlichkeitszahl: ${n.personality}\n- Ausdruckszahl: ${n.expression}\n- Persoenliches Jahr (aktuell aktiv): ${pjStr}\n- Sternzeichen: ${zodiac(p.birthDate)}`;
+      const birthSection = nBirth
+        ? `\n- GEBURTSNAME (Original-Energie, prägt die Wurzel-Identität): ${birthFull}\n  - Seelendrang Geburtsname: ${nBirth.soul}\n  - Persönlichkeitszahl Geburtsname: ${nBirth.personality}\n  - Ausdruckszahl Geburtsname: ${nBirth.expression}\n  HINWEIS: Der Geburtsname (z.B. Mädchenname vor Heirat) trägt die ursprüngliche Seelenenergie. Vergleiche bewusst die Energien beider Namensformen.`
+        : '';
+      return `\n${label}: ${full}\n- Geburtsdatum: ${p.birthDate || 'unbekannt'}\n- Geburtszeit: ${p.birthTime || 'unbekannt'}\n- Geburtsort: ${p.birthPlace || 'unbekannt'}\n- Lebenszahl: ${lifeNum(p.birthDate)}\n- AKTUELLER Name: ${full}\n  - Seelendrang: ${n.soul}\n  - Persönlichkeitszahl: ${n.personality}\n  - Ausdruckszahl: ${n.expression}${birthSection}\n- Persönliches Jahr (aktuell aktiv): ${pjStr}\n- Sternzeichen: ${zodiac(p.birthDate)}`;
     }
 
     // Erweiterter Numerologie-Block: Geburtstagszahl, Maturity, Rationale, Karmic, Hidden Passion, Essence, Pinnacles, Personal Day, Returns, Mondknoten
@@ -908,7 +927,7 @@ ${monthLines}${transitionNote}`;
       const astroKidsBlocks = hasKids ? getChildren().map((c, i) => astroBlock(`KIND ${i+1}`, astroData[`KIND ${i+1}`])).join('\n') : '';
 
       const langInstructions = {
-        de: 'SPRACHE: Schweizer Hochdeutsch. KEIN scharfes S (kein ß), IMMER ss schreiben (gross/muss/heisst/Schluss/Strasse/Spass). STIL: KEINE Gedankenstriche (kein — kein –), verwende stattdessen Kommas, Doppelpunkte oder kurze Saetze. Bindestriche in zusammengesetzten Woertern sind OK.',
+        de: 'SPRACHE: Schweizer Hochdeutsch mit korrekten Umlauten (ä ö ü Ä Ö Ü). KEIN ß, immer ss schreiben (gross/muss/heisst/Schluss/Strasse/Spass). Aber Umlaute normal verwenden (für, über, Größe→Grösse, natürlich, persönlich). STIL: KEINE Gedankenstriche (kein — kein –), verwende stattdessen Kommas, Doppelpunkte oder kurze Sätze. Bindestriche in zusammengesetzten Wörtern sind OK.',
         en: 'LANGUAGE: Write the entire analysis in English (modern, warm, informal "you"). STYLE: NO em-dashes (—) and NO en-dashes (–), use commas, colons, or short sentences instead. Hyphens in compound words are fine. Keep structural markers as technical tags, but content inside markers in English.',
         pt: 'IDIOMA: Escreve a análise inteira em português (preferencialmente europeu, caloroso, forma informal). ESTILO: SEM travessões (sem — e sem –), usa vírgulas, dois-pontos ou frases curtas. Hífenes em palavras compostas estão bem. Mantém marcadores estruturais como etiquetas técnicas, mas conteúdo dentro em português.',
       };
@@ -1043,12 +1062,24 @@ EXTREM WICHTIG: Sei grosszuegig mit Laenge und Tiefe. Diese Analyse wird fuer CH
     }
 
     // ── LOADING CYCLE ──────────────────────────────────────────────
-    const LT = ['Lebenszahlen werden ermittelt…', 'Astrologische Verbindungen werden gewoben…', 'Seelenlandschaft entfaltet sich…'];
-    let li = null, lx = 0;
+    // Status-Texte zyklisch (alle 6 Sekunden)
+    const LT = [
+      'Lebenszahlen werden ermittelt…',
+      'Astrologische Verbindungen werden gewoben…',
+      'Pinnacles werden berechnet…',
+      'Persönliches Jahr und Monate werden gelegt…',
+      'Mondknoten und Aszendent werden positioniert…',
+      'Seelenlandschaft entfaltet sich…',
+      'Tiefe wird verdichtet…',
+      'Worte werden geprüft, Sätze geschliffen…',
+    ];
+    let li = null, lx = 0, loaderStart = 0, loaderTimer = null;
     function startLoader() {
       lx = 0;
-      const el = document.getElementById('loading-sub');
-      if (el) el.textContent = LT[0];
+      loaderStart = Date.now();
+      const sub = document.getElementById('loading-sub');
+      if (sub) sub.textContent = LT[0];
+      // Text-Zyklus
       li = setInterval(() => {
         const sub = document.getElementById('loading-sub');
         if (!sub) return;
@@ -1058,9 +1089,37 @@ EXTREM WICHTIG: Sei grosszuegig mit Laenge und Tiefe. Diese Analyse wird fuer CH
           sub.textContent = LT[lx];
           sub.classList.remove('hidden');
         }, 400);
-      }, 2200);
+      }, 6000);
+      // Timer + Progress-Bar (jede Sekunde)
+      // Annahme: typische Dauer skaliert mit depth. Faustregel: 8s pro Seite + 30s Overhead.
+      const expectedSec = Math.max(60, (state.depth || 15) * 8 + 30);
+      loaderTimer = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - loaderStart) / 1000);
+        const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
+        const ss = String(elapsed % 60).padStart(2, '0');
+        const t = document.getElementById('loading-timer');
+        if (t) t.textContent = `${mm}:${ss}`;
+        const bar = document.getElementById('loading-progress-bar');
+        if (bar) {
+          // Bar geht asymptotisch gegen 95% (nie 100% bevor fertig)
+          const pct = Math.min(95, (elapsed / expectedSec) * 90);
+          bar.style.width = `${pct}%`;
+        }
+        const hint = document.getElementById('loading-hint');
+        if (hint) {
+          if (elapsed < 30) hint.textContent = 'Tiefe Analysen brauchen Zeit. Wir generieren gerade tausende Wörter speziell für dich.';
+          else if (elapsed < 120) hint.textContent = 'Claude schreibt jetzt deine persönlichen Sektionen. Etwa die Hälfte ist gleich geschafft.';
+          else if (elapsed < expectedSec) hint.textContent = 'Letzte Sektionen werden formuliert. Noch ein kleiner Moment.';
+          else hint.textContent = 'Dauert heute etwas länger als üblich. Bitte einen Moment Geduld.';
+        }
+      }, 1000);
     }
-    function stopLoader() { if (li) { clearInterval(li); li = null; } }
+    function stopLoader() {
+      if (li) { clearInterval(li); li = null; }
+      if (loaderTimer) { clearInterval(loaderTimer); loaderTimer = null; }
+      const bar = document.getElementById('loading-progress-bar');
+      if (bar) bar.style.width = '100%';
+    }
 
     // ── API CALL ───────────────────────────────────────────────────
     async function startAnalysis() {
@@ -1098,6 +1157,7 @@ EXTREM WICHTIG: Sei grosszuegig mit Laenge und Tiefe. Diese Analyse wird fuer CH
           body: JSON.stringify({
             messages: [{ role: 'user', content: buildPrompt(astroData) }],
             language: state.language,
+            depth: state.depth,
           })
         });
         // Defensiv: erst als Text lesen, dann versuchen JSON zu parsen.
@@ -1563,6 +1623,21 @@ EXTREM WICHTIG: Sei grosszuegig mit Laenge und Tiefe. Diese Analyse wird fuer CH
     // Lead gate input listeners
     document.addEventListener('input', (e) => {
       if (e.target.id === 'lead-name' || e.target.id === 'lead-email') validateLead();
+      if (e.target.id === 'depth-slider') {
+        const v = parseInt(e.target.value, 10);
+        state.depth = v;
+        const pagesEl = document.getElementById('depth-pages');
+        if (pagesEl) pagesEl.textContent = v;
+        const metaEl = document.getElementById('depth-meta');
+        if (metaEl) {
+          let txt;
+          if (v <= 8) txt = 'Kompakte Übersicht · ca. 1–2 Min · ideal für ein erstes Bild';
+          else if (v <= 18) txt = 'Mittlere Detailtiefe · ca. 3–5 Min · ideal für die meisten Klienten';
+          else if (v <= 28) txt = 'Tiefe Analyse · ca. 5–8 Min · jede Sektion ausführlich behandelt';
+          else txt = 'Volle Profi-Tiefe · ca. 8–12 Min · maximale Ausführlichkeit, jedes Detail';
+          metaEl.textContent = txt;
+        }
+      }
     });
     document.addEventListener('keydown', (e) => {
       if ((e.target.id === 'lead-name' || e.target.id === 'lead-email') && e.key === 'Enter') {
@@ -1923,6 +1998,7 @@ EXTREM WICHTIG: Sei grosszuegig mit Laenge und Tiefe. Diese Analyse wird fuer CH
           .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 44px; }
           .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 32px; }
           .field-label { display: block; font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; font-weight: 400; }
+          .field-hint { display: inline; font-size: 10px; letter-spacing: 0.5px; text-transform: none; color: var(--rose-light); font-style: italic; margin-left: 6px; }
           .field-input {
             width: 100%; background: transparent; border: none;
             border-bottom: 1px solid #ddd0c0;
@@ -2035,6 +2111,24 @@ EXTREM WICHTIG: Sei grosszuegig mit Laenge und Tiefe. Diese Analyse wird fuer CH
           .loading-h { font-family: 'Playfair Display', serif; font-size: 38px; font-weight: 400; color: var(--ink); margin-bottom: 14px; line-height: 1.2; }
           .loading-sub { font-family: 'Playfair Display', serif; font-style: italic; font-size: 17px; color: var(--muted); min-height: 28px; transition: opacity 0.4s; }
           .loading-sub.hidden { opacity: 0; }
+          .loading-timer { font-family: 'Playfair Display', serif; font-size: 64px; font-weight: 400; color: var(--rose); letter-spacing: 0.04em; margin: 28px 0 6px; font-variant-numeric: tabular-nums; }
+          .loading-eta { font-size: 12px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 22px; }
+          .loading-progress { width: 100%; height: 3px; background: var(--rose-pale); border-radius: 2px; overflow: hidden; margin-bottom: 18px; }
+          .loading-progress-bar { height: 100%; background: linear-gradient(90deg, var(--rose-light), var(--gold)); width: 0%; transition: width 0.8s ease-out; }
+          .loading-hint { font-size: 13px; color: var(--muted); line-height: 1.5; max-width: 360px; margin: 0 auto; font-style: italic; }
+
+          /* ── DEPTH SCREEN ───────────────────────────────────────── */
+          .depth-control { background: var(--paper-deep); border-radius: 14px; padding: 48px 56px; margin-top: 8px; }
+          .depth-value-display { text-align: center; margin-bottom: 36px; }
+          .depth-pages { font-family: 'Playfair Display', serif; font-size: 84px; font-weight: 400; color: var(--rose); line-height: 1; display: inline-block; vertical-align: baseline; }
+          .depth-label { font-family: 'Raleway', sans-serif; font-size: 14px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); display: inline-block; vertical-align: baseline; margin-left: 12px; }
+          .depth-slider { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--rose-pale); border-radius: 2px; outline: none; }
+          .depth-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 28px; height: 28px; border-radius: 50%; background: var(--rose); cursor: pointer; box-shadow: 0 2px 8px rgba(155, 79, 102, 0.3); transition: transform 0.15s; }
+          .depth-slider::-webkit-slider-thumb:hover { transform: scale(1.1); }
+          .depth-slider::-moz-range-thumb { width: 28px; height: 28px; border-radius: 50%; background: var(--rose); cursor: pointer; border: none; box-shadow: 0 2px 8px rgba(155, 79, 102, 0.3); }
+          .depth-scale { display: flex; justify-content: space-between; margin-top: 14px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+          .depth-meta { margin-top: 32px; padding: 16px 20px; background: rgba(255,255,255,0.5); border-radius: 8px; font-style: italic; color: var(--ink); font-size: 14px; line-height: 1.5; text-align: center; }
+
           .loading-dots { display: flex; gap: 8px; justify-content: center; margin-top: 44px; }
           .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--rose-pale); animation: dp 1.6s ease-in-out infinite; }
           .dot:nth-child(2){animation-delay:0.3s} .dot:nth-child(3){animation-delay:0.6s}
@@ -2582,11 +2676,40 @@ EXTREM WICHTIG: Sei grosszuegig mit Laenge und Tiefe. Diese Analyse wird fuer CH
         </div>
       </div>
 
-      {/* SCREEN 6: FOKUS */}
+      {/* SCREEN 6: DETAILTIEFE */}
+      <div className="screen" id="screen-depth">
+        <div className="form-page">
+          <div className="form-page-header">
+            <div className="form-eyebrow">Schritt 6 · Detailtiefe</div>
+            <h2 className="form-h2">Wie ausführlich<br/>soll deine Analyse werden?</h2>
+            <p className="form-sub">Von kompakter Übersicht bis hin zur vollen Profi-Tiefe. Je länger, desto mehr Wartezeit, dafür mehr Tiefe pro Sektion.</p>
+          </div>
+          <div className="depth-control">
+            <div className="depth-value-display">
+              <span className="depth-pages" id="depth-pages">15</span>
+              <span className="depth-label">Seiten</span>
+            </div>
+            <input type="range" min="5" max="40" defaultValue="15" step="5" id="depth-slider" className="depth-slider"/>
+            <div className="depth-scale">
+              <span>5 · Kompakt</span>
+              <span>15 · Mittel</span>
+              <span>25 · Tief</span>
+              <span>40 · Profi</span>
+            </div>
+            <div className="depth-meta" id="depth-meta">Mittlere Detailtiefe · ca. 4-6 Min Generationsdauer · ideal für die meisten Klienten</div>
+          </div>
+          <div className="form-footer">
+            <button className="btn-back">← Zurück</button>
+            <button className="btn-primary btn-next-generic">Weiter →</button>
+          </div>
+        </div>
+      </div>
+
+      {/* SCREEN 7: FOKUS */}
       <div className="screen" id="screen-focus">
         <div className="form-page">
           <div className="form-page-header">
-            <div className="form-eyebrow">Schritt 6 von 6 · Fokus</div>
+            <div className="form-eyebrow">Schritt 7 · Fokus</div>
             <h2 className="form-h2">Was bewegt dich<br/>am meisten?</h2>
             <p className="form-sub">Wähle deinen Schwerpunkt. Die Analyse bleibt vollständig — dieser Fokus bestimmt, wo sie am tiefsten geht.</p>
           </div>
@@ -2616,13 +2739,14 @@ EXTREM WICHTIG: Sei grosszuegig mit Laenge und Tiefe. Diese Analyse wird fuer CH
       <div className="screen" id="screen-loading">
         <div className="loading-inner">
           <span className="loading-symbol">✦</span>
-          <div className="loading-h">Dein Code<br/>wird berechnet…</div>
+          <div className="loading-h">Deine Analyse<br/>wird erstellt…</div>
           <div className="loading-sub" id="loading-sub">Lebenszahlen werden ermittelt…</div>
-          <div className="loading-dots">
-            <div className="dot"></div>
-            <div className="dot"></div>
-            <div className="dot"></div>
+          <div className="loading-timer" id="loading-timer">00:00</div>
+          <div className="loading-eta" id="loading-eta">Geschätzte Dauer: 3–6 Minuten</div>
+          <div className="loading-progress">
+            <div className="loading-progress-bar" id="loading-progress-bar"></div>
           </div>
+          <div className="loading-hint" id="loading-hint">Tiefe Analysen brauchen Zeit. Wir generieren gerade tausende Wörter speziell für dich.</div>
         </div>
       </div>
 
