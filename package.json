@@ -18,6 +18,8 @@
   "build": {
     "appId": "ch.herzbewegung.familien-code",
     "productName": "FamilienCode",
+    "npmRebuild": false,
+    "buildDependenciesFromSource": false,
     "directories": {
       "output": "dist-electron"
     },
@@ -31,6 +33,7 @@
       "package.json",
       "node_modules/**/*",
       "!node_modules/{electron,electron-builder,sharp,concurrently,wait-on,@electron-toolkit}/**/*",
+      "!node_modules/swisseph/**/*",
       "!**/.next/cache/**/*",
       "!**/*.{md,test.js,spec.js}",
       "!.env.local",
