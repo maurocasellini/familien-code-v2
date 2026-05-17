@@ -154,14 +154,8 @@ export default function Home() {
             <input class="field-input" id="${prefix}-firstname" placeholder="Taufname/n" />
           </div>
           <div class="field-group">
-            <label class="field-label">Nachname (aktuell)</label>
-            <input class="field-input" id="${prefix}-lastname" placeholder="Nachname" />
-          </div>
-        </div>
-        <div class="field-row">
-          <div class="field-group">
-            <label class="field-label">Geburtsname <span class="field-hint">(nur ausfüllen falls anders als aktueller Nachname, z.B. bei Heirat)</span></label>
-            <input class="field-input" id="${prefix}-birthname" placeholder="Geburtsname (optional)" />
+            <label class="field-label">Nachname (Geburtsname)</label>
+            <input class="field-input" id="${prefix}-lastname" placeholder="Nachname bei Geburt" />
           </div>
         </div>
         <div class="field-row-3">
@@ -198,14 +192,8 @@ export default function Home() {
               <input class="field-input" id="${p}-firstname" placeholder="Taufname/n" />
             </div>
             <div class="field-group">
-              <label class="field-label">Nachname (aktuell)</label>
-              <input class="field-input" id="${p}-lastname" placeholder="Nachname" />
-            </div>
-          </div>
-          <div class="field-row">
-            <div class="field-group">
-              <label class="field-label">Geburtsname <span class="field-hint">(falls anders als aktueller Nachname)</span></label>
-              <input class="field-input" id="${p}-birthname" placeholder="Geburtsname (optional)" />
+              <label class="field-label">Nachname (Geburtsname)</label>
+              <input class="field-input" id="${p}-lastname" placeholder="Nachname bei Geburt" />
             </div>
           </div>
           <div class="field-row-3">
@@ -717,17 +705,12 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
     function personBlock(p, label) {
       if (!p.firstName) return '';
       const full = `${p.firstName} ${p.lastName}`.trim();
-      const birthFull = p.birthName ? `${p.firstName} ${p.birthName}`.trim() : null;
       const n = nameNums(full);
-      const nBirth = birthFull ? nameNums(birthFull) : null;
       const pjInfo = getPersonalYearInfo(p.birthDate);
       const pjStr = pjInfo
         ? `${pjInfo.currentPJ} (aktiv vom ${pjInfo.startDate} bis ${pjInfo.endDate})`
         : 'n/a';
-      const birthSection = nBirth
-        ? `\n- GEBURTSNAME (Original-Energie, prägt die Wurzel-Identität): ${birthFull}\n  - Seelendrang Geburtsname: ${nBirth.soul}\n  - Persönlichkeitszahl Geburtsname: ${nBirth.personality}\n  - Ausdruckszahl Geburtsname: ${nBirth.expression}\n  HINWEIS: Der Geburtsname (z.B. Mädchenname vor Heirat) trägt die ursprüngliche Seelenenergie. Vergleiche bewusst die Energien beider Namensformen.`
-        : '';
-      return `\n${label}: ${full}\n- Geburtsdatum: ${p.birthDate || 'unbekannt'}\n- Geburtszeit: ${p.birthTime || 'unbekannt'}\n- Geburtsort: ${p.birthPlace || 'unbekannt'}\n- Lebenszahl: ${lifeNum(p.birthDate)}\n- AKTUELLER Name: ${full}\n  - Seelendrang: ${n.soul}\n  - Persönlichkeitszahl: ${n.personality}\n  - Ausdruckszahl: ${n.expression}${birthSection}\n- Persönliches Jahr (aktuell aktiv): ${pjStr}\n- Sternzeichen: ${zodiac(p.birthDate)}`;
+      return `\n${label}: ${full}\n- Geburtsdatum: ${p.birthDate || 'unbekannt'}\n- Geburtszeit: ${p.birthTime || 'unbekannt'}\n- Geburtsort: ${p.birthPlace || 'unbekannt'}\n- Lebenszahl: ${lifeNum(p.birthDate)}\n- Seelendrang: ${n.soul}\n- Persönlichkeitszahl: ${n.personality}\n- Ausdruckszahl: ${n.expression}\n- Persönliches Jahr (aktuell aktiv): ${pjStr}\n- Sternzeichen: ${zodiac(p.birthDate)}`;
     }
 
     // Erweiterter Numerologie-Block: Geburtstagszahl, Maturity, Rationale, Karmic, Hidden Passion, Essence, Pinnacles, Personal Day, Returns, Mondknoten
