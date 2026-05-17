@@ -976,7 +976,9 @@ Für normalen Fliesstext: einfach Text ohne Markierung.
 
 Erstelle folgende Sektionen mit erheblicher Tiefe. ZIELLAENGE: durchschnittlich 1500 Wörter pro Sektion (Kurz-Sektionen wie Essenz ausgenommen). Schreibe wie eine erfahrene Beraterin mit 20 Jahren Erfahrung, die Zeit hat. Keine generischen Phrasen, jede Aussage muss an konkrete Daten der Person ankoppeln.
 
-1. Der zentrale Code, mindestens 1200 Wörter, mit [ZAHL:X] für den Haupt-Code, dann ausführliche Erklärung des Lebensthemas, der Mission, der Schatten und Geschenke.
+${hasPair ? `🔑 MASTER-REGEL FÜR PAAR/FAMILIE: Bei den individuellen Sektionen (Lebensweg, Persönliches Jahr, Pinnacles, Layer A/B/C/E/F, Namens-Numerologie) MUSST DU EXPLIZIT FÜR JEDE EINZELNE PERSON eine eigene Sub-Sektion schreiben. NICHT NUR Person 1 detailliert beschreiben, dann Person 2 in einem Satz abhaken. Beide (bzw. alle) Personen werden GLEICHWERTIG, GLEICH LANG, GLEICH DETAILLIERT behandelt. Pro Sektion separate Unterüberschriften für ${p1.firstName || 'Person 1'}${hasPair && p2?.firstName ? ' und ' + p2.firstName : ''}${hasKids ? ' und jedes Kind' : ''}. Wenn die Sektion 1500 Wörter Mindestlänge hat und 2 Personen analysiert werden, sind das 750+ Wörter pro Person, nicht 1400+50.
+
+` : ''}1. Der zentrale Code, mindestens 1200 Wörter${hasPair ? ` — jede Person bekommt einen eigenen Hauptcode-Block. Schreibe einen Abschnitt fuer ${p1.firstName || 'Person 1'}, dann einen für ${p2?.firstName || 'Person 2'}. Beide mit [ZAHL:X] und ausführlicher Erklärung ihrer Lebenszahl, Mission, Schatten und Geschenke. Mindestens 600 Wörter pro Person` : ''}, mit [ZAHL:X] für den Haupt-Code, dann ausführliche Erklärung des Lebensthemas, der Mission, der Schatten und Geschenke.
 ${hasPair ? `2. Schlüsseldaten des Paares, mindestens 1500 Wörter, mit [KARTEN-GRID-START/END] für Kennenlernen & Hochzeit, dann [PERSON-GRID-START/END] für beide. Erwähne den Beziehungscode (Kompatibilitätszahl) tiefgehend.
 3. Beziehungsdynamik, mindestens 1500 Wörter, mit [DYNAMIK:...] und Erklärungstext, führt durch Resonanz, Reibung und Wachstumsfelder.
 4. Astrologische Kernverbindungen, mindestens 1500 Wörter, mit [ASTRO-START/END], inklusive Synastrie-Aspekte.
@@ -985,52 +987,52 @@ ${hasPair ? `2. Schlüsseldaten des Paares, mindestens 1500 Wörter, mit [KARTEN
 `}
 ${hasKids ? `5. Die Kinder, mindestens 1500 Wörter, mit [PERSON-GRID-START/END] pro Kind, ausführlicher Fliesstext pro Kind mit Lebensaufgabe, Begabungen, Erziehungshinweisen.
 ` : ''}
-${state.constellation === 'family' ? `6. Das Familiensystem, mindestens 1500 Wörter, Fliesstext mit Rollen, Resonanzen, ungeloesten und erlösten Themen.
+${state.constellation === 'family' ? `6. Das Familiensystem, mindestens 1500 Wörter, Fliesstext mit Rollen, Resonanzen, ungelösten und erlösten Themen.
 ` : ''}
-7. Herausforderung & Schlüssel, mindestens 1000 Wörter, mit [HS-START/END] und vertiefenden Absätzen zur Bedeutung beider Pole.
+7. Herausforderung & Schlüssel${hasPair ? ` — separate Sub-Sektionen für ${p1.firstName || 'Person 1'} und ${p2?.firstName || 'Person 2'}` : ''}, mindestens 1000 Wörter${hasPair ? ' (500 pro Person)' : ''}, mit [HS-START/END] und vertiefenden Absätzen zur Bedeutung beider Pole.
 
-8. Dein aktuelles Persönliches Jahr im Detail, DIE LAENGSTE Sektion der Analyse, mindestens 1800 Wörter. PFLICHT-AUFBAU:
-   (a) Beginne mit [PJ-HEADER:Dein aktuelles Persönliches Jahr|PJ-Zahl|Startdatum bis Enddatum]. Werte aus dem PERSOENLICHES JAHR IM DETAIL-Block oben uebernehmen.
+8. Aktuelles Persönliches Jahr im Detail${hasPair ? `. WICHTIG: Schreibe DIESE GANZE SEKTION zweimal — einmal für ${p1.firstName || 'Person 1'}, dann einmal für ${p2?.firstName || 'Person 2'}. Jeder Block separat strukturiert wie unten beschrieben, mit eigener Unterüberschrift "Persönliches Jahr von [Name]"` : ''}. DIE LAENGSTE Sektion, mindestens ${hasPair ? '2400 Wörter (1200 pro Person)' : '1800 Wörter'}. PFLICHT-AUFBAU pro Person:
+   (a) Beginne mit [PJ-HEADER:Persönliches Jahr von [Name]|PJ-Zahl|Startdatum bis Enddatum]. Werte aus dem PERSOENLICHES JAHR IM DETAIL-Block oben übernehmen — pro Person die jeweils korrekten Werte.
    (b) Eröffnungs-Absatz von 250 bis 350 Wörtern zum Gesamt-Thema.
    (c) Vier Quartals-Blöcke mit [QUARTAL:Titel|Zeitraum]. Pro Quartal mindestens 250 Wörter Fliesstext, der die Bewegung des Quartals beschreibt.
    (d) Schwellenmonate als [HIGHLIGHT-MONAT:Monat Jahr|PM-Zahl|Was geschieht] einsetzen wo passend (Verdichtung, Master, LZ-Echo).
-   (e) Abschluss-Absatz mit Uebergangsphase / Wechsel zum naechsten PJ (mindestens 200 Wörter).
+   (e) Abschluss-Absatz mit Übergangsphase / Wechsel zum nächsten PJ (mindestens 200 Wörter).
 
-9. Dein naechstes Persönliches Jahr, mindestens 600 Wörter, mit [PJ-HEADER:Dein naechstes Persönliches Jahr|PJ-Zahl|Startdatum bis Enddatum] und substanzieller Beschreibung des Hauptthemas, des Wechsel-Charakters und der konkreten Aenderungen.
+9. Nächstes Persönliches Jahr${hasPair ? ` — separat für ${p1.firstName || 'Person 1'} und ${p2?.firstName || 'Person 2'}` : ''}, mindestens ${hasPair ? '1200 Wörter (600 pro Person)' : '600 Wörter'}, mit [PJ-HEADER:Nächstes Persönliches Jahr von [Name]|PJ-Zahl|Startdatum bis Enddatum] und substanzieller Beschreibung des Hauptthemas, des Wechsel-Charakters und der konkreten Änderungen.
 
-10. Jahresenergien-Tabelle über 6 Jahre, mit [JAHRES-TABELLE:...] und [JAHR:...] Zeilen, geburtstagsbasiert (Format "11/2025 bis 11/2026"). Kurze einleitende Erklärung erlaubt (200 Wörter), dann die Tabelle.
+10. Jahresenergien-Tabelle über 6 Jahre, mit [JAHRES-TABELLE:...] und [JAHR:...] Zeilen, geburtstagsbasiert (Format "11/2025 bis 11/2026"). Kurze einleitende Erklärung erlaubt (200 Wörter), dann die Tabelle.${hasPair ? ' WICHTIG: Tabelle enthält SPALTEN für jede Person nebeneinander (so können beide gleichzeitig gelesen werden). Erklärungs-Absatz erwähnt resonante Jahre und divergente Jahre der Personen.' : ''}
 
-11. Pinnacles & Challenges, mindestens 1500 Wörter. Verwende [PINNACLE:Person|Nummer|Zeitraum|Zahl|Beschreibung|Challenge] für jeden der 4 Pinnacles pro Person. Zeitraum-Feld IMMER mit Alter UND Jahreszahlen, z.B. "0 bis 26 Jahre (1987 bis 2013)" oder "ab 36 Jahre (ab 2023)". Verwende die berechneten Pinnacle-Werte aus dem ERWEITERTE NUMEROLOGIE-DATEN-Block oben. Identifiziere welcher Pinnacle aktuell aktiv ist (siehe "status"-Hinweis im Datenblock) und ob bald ein Wechsel ansteht. Für den AKTUELL AKTIVEN Pinnacle: zwei separate Absätze, einer zur Energie, einer zur Challenge. Pre- und Post-Pinnacle Phasen erwähnen.
+11. Pinnacles & Challenges${hasPair ? ` — separate Sub-Abschnitte für ${p1.firstName || 'Person 1'} und ${p2?.firstName || 'Person 2'}` : ''}, mindestens ${hasPair ? '2400 Wörter (1200 pro Person)' : '1500 Wörter'}. Verwende [PINNACLE:Person|Nummer|Zeitraum|Zahl|Beschreibung|Challenge] für jeden der 4 Pinnacles pro Person. Zeitraum-Feld IMMER mit Alter UND Jahreszahlen, z.B. "0 bis 26 Jahre (1987 bis 2013)". Verwende die berechneten Pinnacle-Werte aus dem ERWEITERTE NUMEROLOGIE-DATEN-Block oben. Identifiziere welcher Pinnacle aktuell aktiv ist und ob bald ein Wechsel ansteht. Für den AKTUELL AKTIVEN Pinnacle: zwei separate Absätze, einer zur Energie, einer zur Challenge.
 
-12. Namen-Numerologie, mindestens 1200 Wörter, mit [NAMEN-GRID-START/END] und vertiefendem Fliesstext zur Bedeutung jedes Namensanteils.
+12. Namen-Numerologie${hasPair ? ` — separate [NAMEN-GRID-START/END] Blöcke und separate Erklärungs-Absätze für ${p1.firstName || 'Person 1'} und ${p2?.firstName || 'Person 2'}` : ''}, mindestens ${hasPair ? '2000 Wörter (1000 pro Person)' : '1200 Wörter'}, mit [NAMEN-GRID-START/END] und vertiefendem Fliesstext zur Bedeutung jedes Namensanteils.
 
-13. Erweiterte Zahlenebenen (Layer A), mindestens 1500 Wörter, neue Sektion. Verwende die Daten aus ERWEITERTE NUMEROLOGIE-DATEN-Block A:
-   - Geburtstagszahl als eigenes Thema (was bedeutet "der ${'X'}." als Lebenscharakter)
+13. Erweiterte Zahlenebenen (Layer A)${hasPair ? ` — separate Sub-Abschnitte mit Unterüberschriften für jede Person` : ''}, mindestens ${hasPair ? '2400 Wörter (1200 pro Person)' : '1500 Wörter'}. Verwende die Daten aus ERWEITERTE NUMEROLOGIE-DATEN-Block A:
+   - Geburtstagszahl als eigenes Thema
    - Reifezahl/Maturity als Hinweis was nach Alter 35 erwacht
    - Rationale Denkzahl als Hinweis wie Entscheidungen getroffen werden
-   - Karmische Schulden (falls vorhanden): jede einzeln behandeln als Aufgabe aus früheren Zyklen
+   - Karmische Schulden (falls vorhanden): jede einzeln behandeln
    - Karma-Lektionen (fehlende Zahlen): jede einzeln als Lernfeld
-   - Hidden Passion: was die natuerliche Begabung ist die genährt werden will
-   Strukturiere mit Sub-Headern als normaler Fliesstext, KEINE eigenen Marker noetig.
+   - Hidden Passion: was die natürliche Begabung ist
+   Strukturiere mit Sub-Headern als normaler Fliesstext, KEINE eigenen Marker nötig.
 
-14. Essence Transit (Layer B), mindestens 800 Wörter, neue Sektion. Verwende den ESSENCE-Wert aus dem Datenblock. Erkläre:
+14. Essence Transit (Layer B)${hasPair ? ` — separat für jede Person` : ''}, mindestens ${hasPair ? '1400 Wörter (700 pro Person)' : '800 Wörter'}. Verwende den ESSENCE-Wert aus dem Datenblock. Erkläre:
    - Welcher Buchstabe aktuell die Energie des Lebensjahres färbt
    - Welche Essenz-Zahl daraus entsteht
    - Was diese Energie mit dem aktuellen PJ kombiniert ergibt
    - Wann der nächste Buchstabe einsetzt und welche Energie er bringt
 
-15. Astrologische Tiefe (Layer C), mindestens 1200 Wörter, neue Sektion. Auf Basis von Geburtsdatum, Geburtszeit, Geburtsort:
-   - Mondzeichen (so genau wie möglich aus Datum/Zeit/Ort approximieren, dann beschreiben)
-   - Aszendent (nur falls Zeit und Ort verfuegbar)
-   - Mondknoten (Nord/Sued, siehe Datenblock für approximative Werte)
-   - Persönliche Astrologie-Resonanzen (Sonne im X mit Mond in Y ergibt ...)
-   WICHTIG: Wenn Geburtszeit fehlt, erwähne dass Mondzeichen/Aszendent nur als Annäherung verfuegbar sind.
+15. Astrologische Tiefe (Layer C)${hasPair ? ` — separat für jede Person, plus zusammenführender Abschnitt zu Synastrie-Resonanzen` : ''}, mindestens ${hasPair ? '2000 Wörter (1000 pro Person + 400 Synastrie)' : '1200 Wörter'}. Auf Basis von Geburtsdatum, Geburtszeit, Geburtsort:
+   - Mondzeichen
+   - Aszendent (nur falls Zeit und Ort verfügbar)
+   - Mondknoten (Nord/Süd)
+   - Persönliche Astrologie-Resonanzen
+   WICHTIG: Wenn Geburtszeit fehlt, erwähne dass Mondzeichen/Aszendent nur als Annäherung verfügbar sind.
 
-16. Persönlicher Tag heute (Layer E), mindestens 400 Wörter, kompakte aber konkrete Sektion. Welche Tagesenergie heute, was sie empfiehlt für das Lesen dieser Analyse.
+16. Persönlicher Tag heute (Layer E)${hasPair ? ` — separat für jede Person` : ''}, mindestens ${hasPair ? '700 Wörter (350 pro Person)' : '400 Wörter'}. Welche Tagesenergie heute, was sie empfiehlt.
 
-17. Kosmische Zyklen: Saturn & Jupiter (Layer F), mindestens 1200 Wörter, neue Sektion. Verwende Saturn-Returns und Jupiter-Returns aus dem Datenblock:
-   - Erster Saturn-Return (~Alter 29-30): wichtige Lebensschwelle, wenn vergangen erinnern was war, wenn kommend vorbereiten
-   - Zweiter Saturn-Return (~Alter 58-60): zweite grosse Schwelle
+17. Kosmische Zyklen: Saturn & Jupiter (Layer F)${hasPair ? ` — separate Sub-Sektionen für jede Person` : ''}, mindestens ${hasPair ? '2000 Wörter (1000 pro Person)' : '1200 Wörter'}. Verwende Saturn-Returns und Jupiter-Returns aus dem Datenblock:
+   - Erster Saturn-Return (~Alter 29-30): wichtige Lebensschwelle
+   - Zweiter Saturn-Return (~Alter 58-60): zweite Schwelle
    - Jupiter-Returns alle 12 Jahre: kleine Glückszyklen
    - Wie kombinieren sich diese Returns mit dem aktuellen PJ
    - Was bedeutet das für das aktuelle Lebensjahr
