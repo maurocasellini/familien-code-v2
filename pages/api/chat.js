@@ -1,5 +1,24 @@
 import { Redis } from '@upstash/redis';
 
+// Node-internal undici → fetch dispatcher mit langen Timeouts.
+// Default headers-timeout in Node ist 300s; bei 32K-Token-Generation reicht das nicht.
+// Wir nehmen 15 Min — passt fuer lokale Volltiefe-Analysen.
+let longDispatcher = null;
+function getLongDispatcher() {
+  if (longDispatcher) return longDispatcher;
+  try {
+    const { Agent } = require('undici');
+    longDispatcher = new Agent({
+      headersTimeout: 15 * 60 * 1000, // 15 Min
+      bodyTimeout: 15 * 60 * 1000,
+      connectTimeout: 60 * 1000,      // 60s fuer TLS-Handshake
+    });
+  } catch (e) {
+    console.error('[chat] undici Agent nicht verfuegbar:', e.message);
+  }
+  return longDispatcher;
+}
+
 function getRedis() {
   const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -60,7 +79,7 @@ export default async function handler(req, res) {
   // ── ANTHROPIC API ──────────────────────────────────────────────
   try {
     console.log('[chat] Calling Anthropic API. Key present:', !!process.env.ANTHROPIC_API_KEY, 'Key prefix:', process.env.ANTHROPIC_API_KEY?.slice(0, 12));
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const fetchOpts = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -73,7 +92,13 @@ export default async function handler(req, res) {
         system: systemPrompt + (isVercel ? '\n\nWICHTIG: Halte dich KURZ und KOMPAKT. Diese Demo-Umgebung hat ein 60-Sekunden-Limit. Schreibe pro Sektion maximal 500 Woerter. Die volle Tiefe gibts in der lokalen Version.' : ''),
         messages,
       }),
-    });
+    };
+    // Lokal: long-timeout dispatcher anhaengen damit Headers-Timeout nicht bei 5min triggert
+    if (!isVercel) {
+      const disp = getLongDispatcher();
+      if (disp) fetchOpts.dispatcher = disp;
+    }
+    const response = await fetch('https://api.anthropic.com/v1/messages', fetchOpts);
 
     if (!response.ok) {
       const errorText = await response.text();
