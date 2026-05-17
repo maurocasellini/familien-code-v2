@@ -422,6 +422,261 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
       return { calendarMonth, pm };
     }
 
+    // ── PARSE DATE HELPER ──────────────────────────────────────────
+    function parseDate(dateStr) {
+      if (!dateStr) return null;
+      const pt = dateStr.split('.');
+      if (pt.length < 3) return null;
+      return new Date(parseInt(pt[2], 10), parseInt(pt[1], 10) - 1, parseInt(pt[0], 10));
+    }
+
+    // ── A) ERWEITERTE NUMEROLOGIE ──────────────────────────────────
+    // Geburtstagszahl (nur der Tag, reduziert mit Master-Erhalt)
+    function birthDayNum(birthDate) {
+      if (!birthDate) return null;
+      const pt = birthDate.split('.');
+      if (!pt[0]) return null;
+      return red(parseInt(pt[0], 10));
+    }
+    // Reifezahl (Maturity) = Lebenszahl + Ausdruckszahl, reduziert. Ab ~35 dominant.
+    function maturityNum(birthDate, fullName) {
+      const lz = lifeNum(birthDate);
+      if (lz === 'n/a' || !fullName) return null;
+      const nn = nameNums(fullName);
+      if (nn.expression === 'n/a') return null;
+      return red(parseInt(lz, 10) + parseInt(nn.expression, 10));
+    }
+    // Rationale Denkzahl = Lebenszahl + Persoenlichkeit (Vorname), reduziert.
+    function rationalThinkingNum(birthDate, firstName) {
+      const lz = lifeNum(birthDate);
+      if (lz === 'n/a' || !firstName) return null;
+      const nn = nameNums(firstName);
+      if (nn.personality === 'n/a') return null;
+      return red(parseInt(lz, 10) + parseInt(nn.personality, 10));
+    }
+    // Karmische Schulden: 13, 14, 16, 19 in den Hauptberechnungen vor Reduktion
+    function karmicDebts(birthDate, fullName) {
+      const debts = [];
+      const KARMIC = [13, 14, 16, 19];
+      // Geburtstag
+      if (birthDate) {
+        const pt = birthDate.split('.');
+        const day = parseInt(pt[0], 10);
+        if (KARMIC.includes(day)) debts.push({ source: 'Geburtstagszahl', value: day });
+      }
+      // Lebenszahl: rohe Summe aller Geburtsdatumsziffern, falls vor letzter Reduktion karmische Zahl
+      if (birthDate) {
+        const dg = birthDate.replace(/\D/g, '');
+        let s = dg.split('').reduce((a, c) => a + parseInt(c, 10), 0);
+        while (s > 22 && !KARMIC.includes(s)) s = String(s).split('').reduce((a, d) => a + parseInt(d, 10), 0);
+        if (KARMIC.includes(s)) debts.push({ source: 'Lebenszahl-Pfad', value: s });
+      }
+      // Ausdruckszahl
+      if (fullName) {
+        const c = fullName.toUpperCase().replace(/[^A-Z]/g, '');
+        let s = 0; for (const ch of c) s += LM[ch] || 0;
+        while (s > 22 && !KARMIC.includes(s)) s = String(s).split('').reduce((a, d) => a + parseInt(d, 10), 0);
+        if (KARMIC.includes(s)) debts.push({ source: 'Ausdruckszahl', value: s });
+        // Seelendrang (Vokale)
+        let sv = 0; for (const ch of c) if (VO.has(ch)) sv += LM[ch] || 0;
+        while (sv > 22 && !KARMIC.includes(sv)) sv = String(sv).split('').reduce((a, d) => a + parseInt(d, 10), 0);
+        if (KARMIC.includes(sv)) debts.push({ source: 'Seelendrang', value: sv });
+        // Persoenlichkeit (Konsonanten)
+        let sp = 0; for (const ch of c) if (!VO.has(ch)) sp += LM[ch] || 0;
+        while (sp > 22 && !KARMIC.includes(sp)) sp = String(sp).split('').reduce((a, d) => a + parseInt(d, 10), 0);
+        if (KARMIC.includes(sp)) debts.push({ source: 'Persoenlichkeit', value: sp });
+      }
+      return debts;
+    }
+    // Karma-Lektionen: welche Zahlen 1-9 fehlen in den Namensbuchstaben
+    function karmicLessons(fullName) {
+      if (!fullName) return [];
+      const c = fullName.toUpperCase().replace(/[^A-Z]/g, '');
+      const present = new Set();
+      for (const ch of c) {
+        const v = LM[ch];
+        if (v >= 1 && v <= 9) present.add(v);
+      }
+      const missing = [];
+      for (let i = 1; i <= 9; i++) if (!present.has(i)) missing.push(i);
+      return missing;
+    }
+    // Hidden Passion: welche Zahl(en) 1-9 am haeufigsten in Namensbuchstaben
+    function hiddenPassion(fullName) {
+      if (!fullName) return { passions: [], count: 0 };
+      const c = fullName.toUpperCase().replace(/[^A-Z]/g, '');
+      const counts = {};
+      for (const ch of c) {
+        const v = LM[ch];
+        if (v >= 1 && v <= 9) counts[v] = (counts[v] || 0) + 1;
+      }
+      let max = 0;
+      for (const k in counts) if (counts[k] > max) max = counts[k];
+      const passions = Object.keys(counts).filter(k => counts[k] === max).map(Number).sort((a, b) => a - b);
+      return { passions, count: max };
+    }
+
+    // ── B) ESSENCE TRANSIT (Buchstaben-Zyklen) ─────────────────────
+    // Jeder Buchstabe ist fuer "Buchstabenwert" Jahre aktiv. Die Buchstaben des vollen Namens
+    // bilden eine fortlaufende Sequenz. Im aktuellen Lebensjahr ist EIN Buchstabe aktiv.
+    function essenceTransit(fullName, birthDate, today) {
+      if (!birthDate || !fullName) return null;
+      const birth = parseDate(birthDate);
+      if (!birth) return null;
+      const ageInDays = Math.floor((today - birth) / 86400000);
+      const ageInYears = ageInDays / 365.25;
+      const c = fullName.toUpperCase().replace(/[^A-Z]/g, '');
+      let cumYears = 0;
+      for (let i = 0; i < c.length; i++) {
+        const letterValue = LM[c[i]] || 1;
+        const start = cumYears;
+        const end = cumYears + letterValue;
+        if (ageInYears < end) {
+          const yearsIntoLetter = ageInYears - start;
+          const yearsRemaining = end - ageInYears;
+          // Essenz-Zahl: aktueller Buchstabe + ggf. parallele (Erweiterung)
+          // Vereinfacht: nur dieser eine Buchstabe
+          return {
+            letter: c[i],
+            value: letterValue,
+            position: i,
+            startAge: Math.floor(start),
+            endAge: Math.ceil(end),
+            yearsRemaining: yearsRemaining.toFixed(1),
+            essence: red(letterValue),
+          };
+        }
+        cumYears = end;
+      }
+      return null;
+    }
+
+    // ── D) PINNACLE-MECHANIK VERTIEFT ──────────────────────────────
+    function pinnacleDetails(birthDate, today) {
+      if (!birthDate) return null;
+      const pt = birthDate.split('.');
+      if (pt.length < 3) return null;
+      const day = parseInt(pt[0], 10);
+      const month = parseInt(pt[1], 10);
+      const year = parseInt(pt[2], 10);
+      const lzVal = parseInt(lifeNum(birthDate), 10);
+      if (!day || !month || !year || isNaN(lzVal)) return null;
+
+      // Erste Pinnacle: bis Alter (36 - LZ). Bei Master ist LZ schon reduziert.
+      const lzReduced = lzVal >= 10 ? digitSum(lzVal) : lzVal;
+      const p1End = 36 - lzReduced;
+      const p2End = p1End + 9;
+      const p3End = p2End + 9;
+
+      // Pinnacle-Zahlen
+      const p1val = red(red(day) + red(month));
+      const yearReducedFull = red(digitSum(year));
+      const p2val = red(red(day) + yearReducedFull);
+      const p3val = red(p1val + p2val);
+      const p4val = red(red(month) + yearReducedFull);
+
+      // Wechseldaten
+      const fmt = (d, m, y) => `${String(d).padStart(2, '0')}.${String(m).padStart(2, '0')}.${y}`;
+      const wechsel1 = fmt(day, month, year + p1End);
+      const wechsel2 = fmt(day, month, year + p2End);
+      const wechsel3 = fmt(day, month, year + p3End);
+
+      const todayYear = today.getFullYear();
+      const ageNow = Math.floor((today - new Date(year, month - 1, day)) / 31557600000);
+
+      function statusOf(startAge, endAge) {
+        if (endAge === Infinity) return ageNow >= startAge ? 'aktuell' : 'kommend';
+        if (ageNow >= startAge && ageNow < endAge) {
+          const yearsIntoIt = ageNow - startAge;
+          const yearsLeft = endAge - ageNow;
+          return `aktuell (Jahr ${yearsIntoIt + 1}/${endAge - startAge}, noch ${yearsLeft} Jahre)`;
+        }
+        return ageNow < startAge ? 'kommend' : 'vergangen';
+      }
+
+      return [
+        { nr: 1, value: p1val, startAge: 0, endAge: p1End,
+          ageRange: `0 bis ${p1End} Jahre`, yearRange: `${year} bis ${year + p1End}`,
+          wechselDatum: wechsel1, status: statusOf(0, p1End) },
+        { nr: 2, value: p2val, startAge: p1End, endAge: p2End,
+          ageRange: `${p1End} bis ${p2End} Jahre`, yearRange: `${year + p1End} bis ${year + p2End}`,
+          wechselDatum: wechsel2, status: statusOf(p1End, p2End) },
+        { nr: 3, value: p3val, startAge: p2End, endAge: p3End,
+          ageRange: `${p2End} bis ${p3End} Jahre`, yearRange: `${year + p2End} bis ${year + p3End}`,
+          wechselDatum: wechsel3, status: statusOf(p2End, p3End) },
+        { nr: 4, value: p4val, startAge: p3End, endAge: Infinity,
+          ageRange: `ab ${p3End} Jahre`, yearRange: `ab ${year + p3End}`,
+          wechselDatum: null, status: statusOf(p3End, Infinity) },
+      ];
+    }
+
+    // ── E) PERSOENLICHER TAG ───────────────────────────────────────
+    function personalDayNum(birthDate, today) {
+      const info = getPersonalYearInfo(birthDate);
+      if (!info) return null;
+      const todayMonth = today.getMonth() + 1;
+      const todayDay = today.getDate();
+      const pm = red(info.currentPJ + todayMonth);
+      return red(pm + todayDay);
+    }
+
+    // ── F) SATURN- / JUPITER-RETURNS (approximativ, fuer Lebenszyklen) ──
+    // Saturn: ~29.5 Jahre. Jupiter: ~12 Jahre. Exakte Daten brauchten Ephemeris;
+    // diese Approximation reicht fuer Lebensphasen-Markierungen.
+    function saturnReturns(birthDate, today) {
+      const birth = parseDate(birthDate);
+      if (!birth) return [];
+      const out = [];
+      for (let i = 1; i <= 3; i++) {
+        const yearsLater = 29.5 * i;
+        const returnYear = birth.getFullYear() + Math.round(yearsLater);
+        const ageAtReturn = Math.round(yearsLater);
+        const todayYear = today.getFullYear();
+        let status = 'kommend';
+        if (returnYear < todayYear - 2) status = 'vergangen';
+        else if (Math.abs(returnYear - todayYear) <= 2) status = 'aktuell oder nahe';
+        out.push({ number: i, year: returnYear, ageAtReturn, status });
+      }
+      return out;
+    }
+    function jupiterReturns(birthDate, today) {
+      const birth = parseDate(birthDate);
+      if (!birth) return [];
+      const out = [];
+      for (let i = 1; i <= 7; i++) {
+        const ageAtReturn = 12 * i;
+        const returnYear = birth.getFullYear() + ageAtReturn;
+        if (returnYear > 2100) break;
+        const todayYear = today.getFullYear();
+        let status = 'kommend';
+        if (returnYear < todayYear - 1) status = 'vergangen';
+        else if (Math.abs(returnYear - todayYear) <= 1) status = 'aktuell oder nahe';
+        out.push({ number: i, year: returnYear, ageAtReturn, status });
+      }
+      return out;
+    }
+
+    // ── MONDKNOTEN approximativ (18.6 Jahre Zyklus) ────────────────
+    // Der Nordknoten bewegt sich rueckwaerts durch die Sternzeichen.
+    // Referenz: Am 01.01.2000 stand der Nordknoten ungefaehr im Krebs (ca. Grad 5).
+    // Approximation reicht fuer Zeichen-Bestimmung.
+    function moonNodeSign(birthDate) {
+      const birth = parseDate(birthDate);
+      if (!birth) return null;
+      const signs = ['Widder','Stier','Zwillinge','Krebs','Loewe','Jungfrau','Waage','Skorpion','Schuetze','Steinbock','Wassermann','Fische'];
+      // Referenz: 01.01.2000, Nordknoten in Krebs (Index 3, ca. 8 Grad)
+      const ref = new Date(2000, 0, 1);
+      const daysFromRef = (birth - ref) / 86400000;
+      const yearsFromRef = daysFromRef / 365.25;
+      // Nordknoten: ~18.6 Jahre fuer 360 Grad rueckwaerts
+      const degPerYear = -360 / 18.6;
+      const startDeg = 3 * 30 + 8; // Krebs 8 Grad
+      let deg = (startDeg + yearsFromRef * degPerYear) % 360;
+      while (deg < 0) deg += 360;
+      const signIdx = Math.floor(deg / 30);
+      return { north: signs[signIdx], south: signs[(signIdx + 6) % 12] };
+    }
+
     function zodiac(d) {
       if (!d) return 'unbekannt';
       const pt = d.split('.'); if (pt.length < 2) return 'unbekannt';
@@ -454,6 +709,71 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
         ? `${pjInfo.currentPJ} (aktiv vom ${pjInfo.startDate} bis ${pjInfo.endDate})`
         : 'n/a';
       return `\n${label}: ${full}\n- Geburtsdatum: ${p.birthDate || 'unbekannt'}\n- Geburtszeit: ${p.birthTime || 'unbekannt'}\n- Geburtsort: ${p.birthPlace || 'unbekannt'}\n- Lebenszahl: ${lifeNum(p.birthDate)}\n- Seelendrang: ${n.soul}\n- Persönlichkeitszahl: ${n.personality}\n- Ausdruckszahl: ${n.expression}\n- Persoenliches Jahr (aktuell aktiv): ${pjStr}\n- Sternzeichen: ${zodiac(p.birthDate)}`;
+    }
+
+    // Erweiterter Numerologie-Block: Geburtstagszahl, Maturity, Rationale, Karmic, Hidden Passion, Essence, Pinnacles, Personal Day, Returns, Mondknoten
+    function extendedNumerologyBlock(p, label) {
+      if (!p.firstName || !p.birthDate) return '';
+      const today = new Date();
+      const full = `${p.firstName} ${p.lastName}`.trim();
+      const birth = parseDate(p.birthDate);
+      const birthYear = birth ? birth.getFullYear() : null;
+      const age = birth ? Math.floor((today - birth) / 31557600000) : null;
+
+      const bd = birthDayNum(p.birthDate);
+      const mat = maturityNum(p.birthDate, full);
+      const rt = rationalThinkingNum(p.birthDate, p.firstName);
+      const kd = karmicDebts(p.birthDate, full);
+      const kl = karmicLessons(full);
+      const hp = hiddenPassion(full);
+      const et = essenceTransit(full, p.birthDate, today);
+      const pin = pinnacleDetails(p.birthDate, today);
+      const pd = personalDayNum(p.birthDate, today);
+      const sat = saturnReturns(p.birthDate, today);
+      const jup = jupiterReturns(p.birthDate, today);
+      const mn = moonNodeSign(p.birthDate);
+
+      const kdStr = kd.length ? kd.map(d => `${d.value} in ${d.source}`).join(', ') : 'keine';
+      const klStr = kl.length ? kl.join(', ') : 'alle Zahlen 1-9 vertreten (selten)';
+      const hpStr = hp.passions.length ? `${hp.passions.join(', ')} (je ${hp.count} mal im Namen)` : 'keine';
+      const etStr = et ? `Buchstabe "${et.letter}" (Wert ${et.value}, Essenz ${et.essence}) aktiv von Alter ${et.startAge} bis ${et.endAge}, noch ${et.yearsRemaining} Jahre` : 'n/a';
+      const pinStr = pin ? pin.map(p => `Pinnacle ${p.nr}: Zahl ${p.value}, ${p.ageRange} (${p.yearRange})${p.wechselDatum ? ', Wechsel am ' + p.wechselDatum : ''} [${p.status}]`).join('\n  ') : 'n/a';
+      const satStr = sat.length ? sat.map(s => `${s.number}. Saturn-Return ${s.year} (Alter ${s.ageAtReturn}, ${s.status})`).join('\n  ') : 'n/a';
+      const jupStr = jup.length ? jup.map(j => `Jupiter-Return ${j.year} (Alter ${j.ageAtReturn}, ${j.status})`).join('\n  ') : 'n/a';
+      const mnStr = mn ? `Nordknoten approximativ in ${mn.north}, Suedknoten in ${mn.south}` : 'n/a';
+
+      return `
+
+ERWEITERTE NUMEROLOGIE-DATEN — ${label} (heute: ${today.getDate()}.${today.getMonth()+1}.${today.getFullYear()}, Alter ${age}):
+
+A) ZAHLENSCHATZ (klassische pythagoreische Tiefe):
+- Geburtstagszahl (Tag ${p.birthDate.split('.')[0]}): ${bd}
+- Reifezahl/Maturity (LZ + Ausdruck): ${mat} - ab Alter ~35 dominant
+- Rationale Denkzahl (LZ + Persoenlichkeit Vorname): ${rt}
+- Karmische Schulden (13/14/16/19 in Berechnungen): ${kdStr}
+- Karma-Lektionen (fehlende Zahlen im Namen): ${klStr}
+- Hidden Passion / Versteckte Leidenschaft: ${hpStr}
+
+B) ESSENCE TRANSIT (Buchstaben-Zyklus):
+- ${etStr}
+
+D) PINNACLES & CHALLENGES (mit Wechsel-Daten):
+  ${pinStr}
+
+E) PERSOENLICHER TAG heute: ${pd} (aktuelle Tagesenergie)
+
+F) KOSMISCHE ZYKLEN:
+  Saturn-Returns:
+  ${satStr}
+  Jupiter-Returns:
+  ${jupStr}
+  Mondknoten-Achse: ${mnStr}
+
+C) ASTROLOGIE-TIEFE (von Claude zu erweitern wenn Geburtszeit "${p.birthTime || 'unbekannt'}" und Ort "${p.birthPlace || 'unbekannt'}" verfuegbar sind):
+- Sonnenzeichen: ${zodiac(p.birthDate)}
+- Mondzeichen: bitte aus Geburtsdatum/-zeit/-ort approximativ ableiten und benennen
+- Aszendent: bitte berechnen falls Geburtszeit und Ort vorhanden, sonst weglassen
+- Mondknoten siehe oben`;
     }
 
     // Baut den detaillierten PJ-Block fuer den Prompt (12 Monate, Schwellen, naechste PJs, Uebergangsphase)
@@ -548,6 +868,11 @@ ${monthLines}${transitionNote}`;
       const pj2Block = hasPair && p2 ? pjDetailBlock(p2, 'PERSON 2') : '';
       const pjKidsBlocks = hasKids ? getChildren().map((c, i) => pjDetailBlock(c, `KIND ${i+1}`)).join('\n') : '';
 
+      // Erweiterte Numerologie-Bloecke (A, B, D, E, F + C-Hinweis fuer Astrologie)
+      const ext1Block = extendedNumerologyBlock(p1, 'PERSON 1');
+      const ext2Block = hasPair && p2 ? extendedNumerologyBlock(p2, 'PERSON 2') : '';
+      const extKidsBlocks = hasKids ? getChildren().map((c, i) => extendedNumerologyBlock(c, `KIND ${i+1}`)).join('\n') : '';
+
       const langInstructions = {
         de: 'SPRACHE: Schweizer Hochdeutsch. KEIN scharfes S (kein ß), IMMER ss schreiben (gross/muss/heisst/Schluss/Strasse/Spass). STIL: KEINE Gedankenstriche (kein — kein –), verwende stattdessen Kommas, Doppelpunkte oder kurze Saetze. Bindestriche in zusammengesetzten Woertern sind OK.',
         en: 'LANGUAGE: Write the entire analysis in English (modern, warm, informal "you"). STYLE: NO em-dashes (—) and NO en-dashes (–), use commas, colons, or short sentences instead. Hyphens in compound words are fine. Keep structural markers as technical tags, but content inside markers in English.',
@@ -583,6 +908,9 @@ ${ancestryBlock}
 ${pj1Block}
 ${pj2Block}
 ${pjKidsBlocks}
+${ext1Block}
+${ext2Block}
+${extKidsBlocks}
 
 Gib die Analyse als strukturierten Text zurück. Trenne Sektionen mit ~~~.
 Jede Sektion beginnt mit dem Titel, dann einem Zeilenumbruch, dann dem Inhalt.
@@ -607,52 +935,74 @@ PFLICHTREGELN für NAMEN-CARD:
 Für Essenz (letzter Satz, gross): [ESSENZ:Text]
 Für normalen Fliesstext: einfach Text ohne Markierung.
 
-Erstelle folgende Sektionen:
-1. Der zentrale Code — mit [ZAHL:X] für den Haupt-Code, dann Erklärung
-${hasPair ? `2. Schlüsseldaten des Paares — mit [KARTEN-GRID-START/END] für Kennenlernen & Hochzeit, dann [PERSON-GRID-START/END] für beide. Erwähne den Beziehungscode (Kompatibilitätszahl).
-3. Beziehungsdynamik — mit [DYNAMIK:...] und Erklärungstext
-4. Astrologische Kernverbindungen — mit [ASTRO-START/END]
-` : `2. Dein persönlicher Lebensweg — Fliesstext
-3. Deine Namen-Energie — mit [NAMEN-GRID-START/END]
+Erstelle folgende Sektionen mit erheblicher Tiefe. ZIELLAENGE: durchschnittlich 1500 Woerter pro Sektion (Kurz-Sektionen wie Essenz ausgenommen). Schreibe wie eine erfahrene Beraterin mit 20 Jahren Erfahrung, die Zeit hat. Keine generischen Phrasen, jede Aussage muss an konkrete Daten der Person ankoppeln.
+
+1. Der zentrale Code, mindestens 1200 Woerter, mit [ZAHL:X] für den Haupt-Code, dann ausfuehrliche Erklaerung des Lebensthemas, der Mission, der Schatten und Geschenke.
+${hasPair ? `2. Schlüsseldaten des Paares, mindestens 1500 Woerter, mit [KARTEN-GRID-START/END] für Kennenlernen & Hochzeit, dann [PERSON-GRID-START/END] für beide. Erwähne den Beziehungscode (Kompatibilitätszahl) tiefgehend.
+3. Beziehungsdynamik, mindestens 1500 Woerter, mit [DYNAMIK:...] und Erklärungstext, fuehrt durch Resonanz, Reibung und Wachstumsfelder.
+4. Astrologische Kernverbindungen, mindestens 1500 Woerter, mit [ASTRO-START/END], inklusive Synastrie-Aspekte.
+` : `2. Dein persönlicher Lebensweg, mindestens 1500 Woerter, ausfuehrlicher Fliesstext mit den Lebensphasen, Mustern, Talenten, Schattenseiten.
+3. Deine Namen-Energie, mindestens 1500 Woerter, mit [NAMEN-GRID-START/END], plus tiefe Interpretation jedes Aspekts (Seelendrang, Persoenlichkeit, Ausdruck).
 `}
-${hasKids ? `5. Die Kinder — mit [PERSON-GRID-START/END] pro Kind, Fliesstext dazu
+${hasKids ? `5. Die Kinder, mindestens 1500 Woerter, mit [PERSON-GRID-START/END] pro Kind, ausfuehrlicher Fliesstext pro Kind mit Lebensaufgabe, Begabungen, Erziehungshinweisen.
 ` : ''}
-${state.constellation === 'family' ? `6. Das Familiensystem — Fliesstext mit Rollen
+${state.constellation === 'family' ? `6. Das Familiensystem, mindestens 1500 Woerter, Fliesstext mit Rollen, Resonanzen, ungeloesten und erloesten Themen.
 ` : ''}
-7. Herausforderung & Schlüssel — mit [HS-START/END]
+7. Herausforderung & Schluessel, mindestens 1000 Woerter, mit [HS-START/END] und vertiefenden Absaetzen zur Bedeutung beider Pole.
 
-8. Dein aktuelles Persoenliches Jahr im Detail — DIE LAENGSTE und DETAILLIERTESTE Sektion der ganzen Analyse. PFLICHT-AUFBAU:
+8. Dein aktuelles Persoenliches Jahr im Detail, DIE LAENGSTE Sektion der Analyse, mindestens 1800 Woerter. PFLICHT-AUFBAU:
+   (a) Beginne mit [PJ-HEADER:Dein aktuelles Persoenliches Jahr|PJ-Zahl|Startdatum bis Enddatum]. Werte aus dem PERSOENLICHES JAHR IM DETAIL-Block oben uebernehmen.
+   (b) Eroeffnungs-Absatz von 250 bis 350 Woertern zum Gesamt-Thema.
+   (c) Vier Quartals-Bloecke mit [QUARTAL:Titel|Zeitraum]. Pro Quartal mindestens 250 Woerter Fliesstext, der die Bewegung des Quartals beschreibt.
+   (d) Schwellenmonate als [HIGHLIGHT-MONAT:Monat Jahr|PM-Zahl|Was geschieht] einsetzen wo passend (Verdichtung, Master, LZ-Echo).
+   (e) Abschluss-Absatz mit Uebergangsphase / Wechsel zum naechsten PJ (mindestens 200 Woerter).
 
-   (a) Beginne mit dem Marker [PJ-HEADER:Dein aktuelles Persoenliches Jahr|PJ-Zahl|Startdatum bis Enddatum]. Beispiel: [PJ-HEADER:Dein aktuelles Persoenliches Jahr|22|02.11.2025 bis 02.11.2026]. Diese Werte exakt aus dem PERSOENLICHES JAHR IM DETAIL-Block oben uebernehmen, NICHT erfinden.
-   
-   (b) Dann ein Eroeffnungs-Absatz von 150 bis 200 Woertern: das Gesamt-Thema des PJ, welche Energie ist dominant, was wird gefordert, was wird geschenkt, wie passt es zum Lebensthema der Person.
-   
-   (c) Dann VIER Quartals-Bloecke. Jeder Block beginnt mit dem Marker [QUARTAL:Titel|Zeitraum]. Beispiele:
-       [QUARTAL:Erste Phase: Aufbau und Aussaat|November 2025 bis Januar 2026]
-       [QUARTAL:Zweite Phase: Vertiefung|Februar bis April 2026]
-       [QUARTAL:Dritte Phase: Ernte|Mai bis Juli 2026]
-       [QUARTAL:Vierte Phase: Vollendung|August bis Oktober 2026]
-   Pro Quartal mindestens 120 Woerter Fliesstext, der die Bewegung des Quartals beschreibt: was ist das Hauptthema, welche Monate stechen heraus, was empfiehlt sich.
-   
-   (d) Innerhalb der Quartale: fuer Schwellenmonate (Verdichtungsmonat, Meistermonat, Lebensaufgabe-Echo) den Marker [HIGHLIGHT-MONAT:Kalendermonat Jahr|PM-Zahl|Was geschieht in diesem Monat]. Beispiel: [HIGHLIGHT-MONAT:November 2025|33|Meisterzahl-Monat — die hoechste Bauenergie des ganzen Jahres, ein Tor]
-   
-   (e) Ein Abschluss-Absatz (mindestens 100 Woerter) zur Uebergangsphase: wie der Wechsel zum naechsten PJ am naechsten Geburtstag spuerbar wird, was JETZT schon vorbereitet werden kann. Wenn der UEBERGANGSPHASE-Hinweis im Datenblock aktiv ist, explizit erwaehnen.
-   
-   ZIELLAENGE GESAMT: mindestens 900 Woerter in dieser einen Sektion. KEINE generischen Numerologie-Phrasen, jede Aussage muss an die konkreten Daten der Person ankoppeln. Schreibe wie eine erfahrene Beraterin, die Zeit hat.
+9. Dein naechstes Persoenliches Jahr, mindestens 600 Woerter, mit [PJ-HEADER:Dein naechstes Persoenliches Jahr|PJ-Zahl|Startdatum bis Enddatum] und substanzieller Beschreibung des Hauptthemas, des Wechsel-Charakters und der konkreten Aenderungen.
 
-9. Dein naechstes Persoenliches Jahr — etwa 200 Woerter. Beginne mit dem Marker [PJ-HEADER:Dein naechstes Persoenliches Jahr|PJ-Zahl|Startdatum bis Enddatum]. Dann ein substanzieller Absatz zum Hauptthema, dem Wechsel-Charakter und was sich konkret aendert. Optional ein zweiter, kuerzerer Absatz zum uebernaechsten PJ als Ausblick.
+10. Jahresenergien-Tabelle ueber 6 Jahre, mit [JAHRES-TABELLE:...] und [JAHR:...] Zeilen, geburtstagsbasiert (Format "11/2025 bis 11/2026"). Kurze einleitende Erklaerung erlaubt (200 Woerter), dann die Tabelle.
 
-10. Jahresenergien-Tabelle — Querblick ueber alle Personen, mit [JAHRES-TABELLE:...] und [JAHR:...] Zeilen ueber 6 Jahre, geburtstagsbasiert. Format Jahr-Bereich: "11/2025 bis 11/2026" (Geburtsmonat als Anker).
+11. Pinnacles & Challenges, mindestens 1500 Woerter. Verwende [PINNACLE:Person|Nummer|Zeitraum|Zahl|Beschreibung|Challenge] fuer jeden der 4 Pinnacles pro Person. Zeitraum-Feld IMMER mit Alter UND Jahreszahlen, z.B. "0 bis 26 Jahre (1987 bis 2013)" oder "ab 36 Jahre (ab 2023)". Verwende die berechneten Pinnacle-Werte aus dem ERWEITERTE NUMEROLOGIE-DATEN-Block oben. Identifiziere welcher Pinnacle aktuell aktiv ist (siehe "status"-Hinweis im Datenblock) und ob bald ein Wechsel ansteht. Fuer den AKTUELL AKTIVEN Pinnacle: zwei separate Absaetze, einer zur Energie, einer zur Challenge. Pre- und Post-Pinnacle Phasen erwaehnen.
 
-11. Pinnacles & Challenges — mit [PINNACLE:...] für jede Person. Identifiziere welcher Pinnacle aktuell aktiv ist und ob im aktuellen oder naechsten PJ ein Pinnacle-Wechsel ansteht.
+12. Namen-Numerologie, mindestens 1200 Woerter, mit [NAMEN-GRID-START/END] und vertiefendem Fliesstext zur Bedeutung jedes Namensanteils.
 
-12. Namen-Numerologie — mit [NAMEN-GRID-START/END]
-${hasAncestry ? `${hasNameChange ? '13a' : '13'}. Die Ahnenlinie — was aus deiner Familie mitschwingt. Analysiere mit den ANGEGEBENEN Daten zu Mutter und/oder Vater: wiederholende Lebenszahlen ueber Generationen (z.B. Mutter LZ 11, Kind LZ 11 = Familienmuster), Mutterlinie (naehrend, empfangend) vs. Vaterlinie (schuetzend, strukturierend), kulturelle/energetische Herkunftslinie (Geburtsort), was die Hauptperson aus dem System weitertraegt oder transformiert. KEINE Aussagen ueber nicht angegebene Vorfahren. Schreibe als Fliesstext, integriere die berechneten Zahlen organisch.
-` : ''}${hasNameChange ? `13. Namenswechsel & seine Energie — analysiere den/die Namenswechsel: was verändert sich numerologisch? Welche Energie kommt, welche geht? Verwende [NAMEN-GRID-START/END] für den Vergleich.
-14. Die Essenz — mit [ESSENZ:Ein einziger Satz der alles zusammenfasst]` : `13. Die Essenz — mit [ESSENZ:Ein einziger Satz der alles zusammenfasst]`}
+13. Erweiterte Zahlenebenen (Layer A), mindestens 1500 Woerter, neue Sektion. Verwende die Daten aus ERWEITERTE NUMEROLOGIE-DATEN-Block A:
+   - Geburtstagszahl als eigenes Thema (was bedeutet "der ${'X'}." als Lebenscharakter)
+   - Reifezahl/Maturity als Hinweis was nach Alter 35 erwacht
+   - Rationale Denkzahl als Hinweis wie Entscheidungen getroffen werden
+   - Karmische Schulden (falls vorhanden): jede einzeln behandeln als Aufgabe aus frueheren Zyklen
+   - Karma-Lektionen (fehlende Zahlen): jede einzeln als Lernfeld
+   - Hidden Passion: was die natuerliche Begabung ist die genaehrt werden will
+   Strukturiere mit Sub-Headern als normaler Fliesstext, KEINE eigenen Marker noetig.
+
+14. Essence Transit (Layer B), mindestens 800 Woerter, neue Sektion. Verwende den ESSENCE-Wert aus dem Datenblock. Erklaere:
+   - Welcher Buchstabe aktuell die Energie des Lebensjahres faerbt
+   - Welche Essenz-Zahl daraus entsteht
+   - Was diese Energie mit dem aktuellen PJ kombiniert ergibt
+   - Wann der naechste Buchstabe einsetzt und welche Energie er bringt
+
+15. Astrologische Tiefe (Layer C), mindestens 1200 Woerter, neue Sektion. Auf Basis von Geburtsdatum, Geburtszeit, Geburtsort:
+   - Mondzeichen (so genau wie moeglich aus Datum/Zeit/Ort approximieren, dann beschreiben)
+   - Aszendent (nur falls Zeit und Ort verfuegbar)
+   - Mondknoten (Nord/Sued, siehe Datenblock fuer approximative Werte)
+   - Persoenliche Astrologie-Resonanzen (Sonne im X mit Mond in Y ergibt ...)
+   WICHTIG: Wenn Geburtszeit fehlt, erwaehne dass Mondzeichen/Aszendent nur als Annaeherung verfuegbar sind.
+
+16. Persoenlicher Tag heute (Layer E), mindestens 400 Woerter, kompakte aber konkrete Sektion. Welche Tagesenergie heute, was sie empfiehlt fuer das Lesen dieser Analyse.
+
+17. Kosmische Zyklen: Saturn & Jupiter (Layer F), mindestens 1200 Woerter, neue Sektion. Verwende Saturn-Returns und Jupiter-Returns aus dem Datenblock:
+   - Erster Saturn-Return (~Alter 29-30): wichtige Lebensschwelle, wenn vergangen erinnern was war, wenn kommend vorbereiten
+   - Zweiter Saturn-Return (~Alter 58-60): zweite grosse Schwelle
+   - Jupiter-Returns alle 12 Jahre: kleine Glueckszyklen
+   - Wie kombinieren sich diese Returns mit dem aktuellen PJ
+   - Was bedeutet das fuer das aktuelle Lebensjahr
+
+${hasAncestry ? `18. Die Ahnenlinie, mindestens 1500 Woerter. Analysiere mit den ANGEGEBENEN Daten zu Mutter und/oder Vater: wiederholende Lebenszahlen, Mutterlinie vs. Vaterlinie, kulturelle Herkunftslinie, was die Hauptperson aus dem System weitertraegt. KEINE Aussagen ueber nicht angegebene Vorfahren. Schreibe als Fliesstext.
+` : ''}${hasNameChange ? `19. Namenswechsel & seine Energie, mindestens 1000 Woerter. Analysiere den/die Namenswechsel: was veraendert sich numerologisch? Welche Energie kommt, welche geht? [NAMEN-GRID-START/END] fuer den Vergleich.
+20. Die Essenz, ein einziger Satz, mit [ESSENZ:Text]` : `19. Die Essenz, ein einziger Satz, mit [ESSENZ:Text]`}
 
 Schreibe tief, präzise, persönlich. Keine generischen Aussagen. Zahlen und astrologische Fakten exakt aus den gegebenen Daten ableiten.
-WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** und *kursiv* enthalten. Die Jahresenergien MÜSSEN als [JAHRES-TABELLE] formatiert sein, KEIN Fliesstext mit "**Jahr 6:**" statt Tabelle.`;
+WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** und *kursiv* enthalten.
+EXTREM WICHTIG: Sei grosszuegig mit Laenge und Tiefe. Diese Analyse wird fuer CHF 200+ verkauft, sie muss diesem Preis entsprechen. Lieber zu lang als zu kurz. Wenn du Token-Budget hast, nutze es.`;
     }
 
     // ── LOADING CYCLE ──────────────────────────────────────────────
