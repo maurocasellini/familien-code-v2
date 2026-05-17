@@ -290,9 +290,9 @@ ${label}:
 - Geburtsdatum: ${a.birthDate || '—'}
 - Geburtsort: ${a.birthPlace || '—'}
 - Lebenszahl: ${lz}
-- Persoenliches Jahr: ${py}
+- Persönliches Jahr: ${py}
 - Sternzeichen: ${zd}${nn ? `
-- Namens-Numerologie (Vorname + Geburtsname): Seelendrang=${nn.soul}, Persoenlichkeit=${nn.personality}, Ausdruck=${nn.expression}` : ''}`;
+- Namens-Numerologie (Vorname + Geburtsname): Seelendrang=${nn.soul}, Persönlichkeit=${nn.personality}, Ausdruck=${nn.expression}` : ''}`;
     }
     function buildAncestryBlock() {
       const a = getAncestry();
@@ -327,7 +327,7 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
     // ── PERSOENLICHES JAHR (geburtstagsbasiert, dynamisch) ──────────
     // Quersumme einer Zahl (ohne Master-Reduktion)
     function digitSum(n) { return String(n).split('').reduce((a, d) => a + parseInt(d || 0, 10), 0); }
-    // Berechnet PJ-Zahl fuer einen gegebenen "Startjahr" (Jahr in dem das PJ am Geburtstag startete)
+    // Berechnet PJ-Zahl für einen gegebenen "Startjahr" (Jahr in dem das PJ am Geburtstag startete)
     function calcPJ(birthDay, birthMonth, startYear) {
       // Klassisch: Tag + Monat + Quersumme(Jahr), dann reduziert mit Master-Erhalt
       const ys = digitSum(startYear);
@@ -380,7 +380,7 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
         birthDay: day, birthMonth: month,
       };
     }
-    // Backward-compatible: gibt nur die Zahl zurueck (fuer alte Aufrufe)
+    // Backward-compatible: gibt nur die Zahl zurück (für alte Aufrufe)
     function persYear(birthDate) {
       const info = getPersonalYearInfo(birthDate);
       return info ? info.currentPJ : 'n/a';
@@ -414,7 +414,7 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
         return { ...m, flags };
       });
     }
-    // Aktueller Persoenlicher Monat (in welchem PM ist die Person heute)
+    // Aktueller Persönlicher Monat (in welchem PM ist die Person heute)
     function getCurrentPersonalMonth(birthDate) {
       const info = getPersonalYearInfo(birthDate);
       if (!info) return null;
@@ -448,7 +448,7 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
       if (nn.expression === 'n/a') return null;
       return red(parseInt(lz, 10) + parseInt(nn.expression, 10));
     }
-    // Rationale Denkzahl = Lebenszahl + Persoenlichkeit (Vorname), reduziert.
+    // Rationale Denkzahl = Lebenszahl + Persönlichkeit (Vorname), reduziert.
     function rationalThinkingNum(birthDate, firstName) {
       const lz = lifeNum(birthDate);
       if (lz === 'n/a' || !firstName) return null;
@@ -483,10 +483,10 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
         let sv = 0; for (const ch of c) if (VO.has(ch)) sv += LM[ch] || 0;
         while (sv > 22 && !KARMIC.includes(sv)) sv = String(sv).split('').reduce((a, d) => a + parseInt(d, 10), 0);
         if (KARMIC.includes(sv)) debts.push({ source: 'Seelendrang', value: sv });
-        // Persoenlichkeit (Konsonanten)
+        // Persönlichkeit (Konsonanten)
         let sp = 0; for (const ch of c) if (!VO.has(ch)) sp += LM[ch] || 0;
         while (sp > 22 && !KARMIC.includes(sp)) sp = String(sp).split('').reduce((a, d) => a + parseInt(d, 10), 0);
-        if (KARMIC.includes(sp)) debts.push({ source: 'Persoenlichkeit', value: sp });
+        if (KARMIC.includes(sp)) debts.push({ source: 'Persönlichkeit', value: sp });
       }
       return debts;
     }
@@ -503,7 +503,7 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
       for (let i = 1; i <= 9; i++) if (!present.has(i)) missing.push(i);
       return missing;
     }
-    // Hidden Passion: welche Zahl(en) 1-9 am haeufigsten in Namensbuchstaben
+    // Hidden Passion: welche Zahl(en) 1-9 am häufigsten in Namensbuchstaben
     function hiddenPassion(fullName) {
       if (!fullName) return { passions: [], count: 0 };
       const c = fullName.toUpperCase().replace(/[^A-Z]/g, '');
@@ -519,7 +519,7 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
     }
 
     // ── B) ESSENCE TRANSIT (Buchstaben-Zyklen) ─────────────────────
-    // Jeder Buchstabe ist fuer "Buchstabenwert" Jahre aktiv. Die Buchstaben des vollen Namens
+    // Jeder Buchstabe ist für "Buchstabenwert" Jahre aktiv. Die Buchstaben des vollen Namens
     // bilden eine fortlaufende Sequenz. Im aktuellen Lebensjahr ist EIN Buchstabe aktiv.
     function essenceTransit(fullName, birthDate, today) {
       if (!birthDate || !fullName) return null;
@@ -622,9 +622,9 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
       return red(pm + todayDay);
     }
 
-    // ── F) SATURN- / JUPITER-RETURNS (approximativ, fuer Lebenszyklen) ──
+    // ── F) SATURN- / JUPITER-RETURNS (approximativ, für Lebenszyklen) ──
     // Saturn: ~29.5 Jahre. Jupiter: ~12 Jahre. Exakte Daten brauchten Ephemeris;
-    // diese Approximation reicht fuer Lebensphasen-Markierungen.
+    // diese Approximation reicht für Lebensphasen-Markierungen.
     function saturnReturns(birthDate, today) {
       const birth = parseDate(birthDate);
       if (!birth) return [];
@@ -661,16 +661,16 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
     // ── MONDKNOTEN approximativ (18.6 Jahre Zyklus) ────────────────
     // Der Nordknoten bewegt sich rueckwaerts durch die Sternzeichen.
     // Referenz: Am 01.01.2000 stand der Nordknoten ungefaehr im Krebs (ca. Grad 5).
-    // Approximation reicht fuer Zeichen-Bestimmung.
+    // Approximation reicht für Zeichen-Bestimmung.
     function moonNodeSign(birthDate) {
       const birth = parseDate(birthDate);
       if (!birth) return null;
-      const signs = ['Widder','Stier','Zwillinge','Krebs','Loewe','Jungfrau','Waage','Skorpion','Schuetze','Steinbock','Wassermann','Fische'];
+      const signs = ['Widder','Stier','Zwillinge','Krebs','Löwe','Jungfrau','Waage','Skorpion','Schütze','Steinbock','Wassermann','Fische'];
       // Referenz: 01.01.2000, Nordknoten in Krebs (Index 3, ca. 8 Grad)
       const ref = new Date(2000, 0, 1);
       const daysFromRef = (birth - ref) / 86400000;
       const yearsFromRef = daysFromRef / 365.25;
-      // Nordknoten: ~18.6 Jahre fuer 360 Grad rueckwaerts
+      // Nordknoten: ~18.6 Jahre für 360 Grad rueckwaerts
       const degPerYear = -360 / 18.6;
       const startDeg = 3 * 30 + 8; // Krebs 8 Grad
       let deg = (startDeg + yearsFromRef * degPerYear) % 360;
@@ -742,7 +742,7 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
       const pinStr = pin ? pin.map(p => `Pinnacle ${p.nr}: Zahl ${p.value}, ${p.ageRange} (${p.yearRange})${p.wechselDatum ? ', Wechsel am ' + p.wechselDatum : ''} [${p.status}]`).join('\n  ') : 'n/a';
       const satStr = sat.length ? sat.map(s => `${s.number}. Saturn-Return ${s.year} (Alter ${s.ageAtReturn}, ${s.status})`).join('\n  ') : 'n/a';
       const jupStr = jup.length ? jup.map(j => `Jupiter-Return ${j.year} (Alter ${j.ageAtReturn}, ${j.status})`).join('\n  ') : 'n/a';
-      const mnStr = mn ? `Nordknoten approximativ in ${mn.north}, Suedknoten in ${mn.south}` : 'n/a';
+      const mnStr = mn ? `Nordknoten approximativ in ${mn.north}, Südknoten in ${mn.south}` : 'n/a';
 
       return `
 
@@ -751,7 +751,7 @@ ERWEITERTE NUMEROLOGIE-DATEN — ${label} (heute: ${today.getDate()}.${today.get
 A) ZAHLENSCHATZ (klassische pythagoreische Tiefe):
 - Geburtstagszahl (Tag ${p.birthDate.split('.')[0]}): ${bd}
 - Reifezahl/Maturity (LZ + Ausdruck): ${mat} - ab Alter ~35 dominant
-- Rationale Denkzahl (LZ + Persoenlichkeit Vorname): ${rt}
+- Rationale Denkzahl (LZ + Persönlichkeit Vorname): ${rt}
 - Karmische Schulden (13/14/16/19 in Berechnungen): ${kdStr}
 - Karma-Lektionen (fehlende Zahlen im Namen): ${klStr}
 - Hidden Passion / Versteckte Leidenschaft: ${hpStr}
@@ -778,7 +778,7 @@ C) ASTROLOGIE-TIEFE (von Claude zu erweitern wenn Geburtszeit "${p.birthTime || 
 - Mondknoten siehe oben`;
     }
 
-    // Baut den detaillierten PJ-Block fuer den Prompt (12 Monate, Schwellen, naechste PJs, Uebergangsphase)
+    // Baut den detaillierten PJ-Block für den Prompt (12 Monate, Schwellen, nächste PJs, Uebergangsphase)
     function pjDetailBlock(p, label) {
       if (!p.firstName || !p.birthDate) return '';
       const info = getPersonalYearInfo(p.birthDate);
@@ -796,17 +796,17 @@ C) ASTROLOGIE-TIEFE (von Claude zu erweitern wenn Geburtszeit "${p.birthTime || 
 
       const transitionNote = info.inTransition
         ? (info.inTransitionAfter
-          ? `\n⚠ UEBERGANGSPHASE (innerhalb 6 Wochen NACH Geburtstag, Tag ${info.daysSinceBirthday}/42 nach Wechsel): Die neue PJ-Energie ${info.currentPJ} ist noch frisch, alte Energie ${info.previousPJ} klingt nach. Das verdient eine explizite Erwaehnung.`
-          : `\n⚠ UEBERGANGSPHASE (innerhalb 6 Wochen VOR Geburtstag, noch ${info.daysUntilNextBirthday} Tage bis Wechsel): Aktuelles PJ ${info.currentPJ} klingt aus, kommendes PJ ${info.nextPJ} ist energetisch schon spuerbar. Das verdient eine explizite Erwaehnung.`)
+          ? `\n⚠ UEBERGANGSPHASE (innerhalb 6 Wochen NACH Geburtstag, Tag ${info.daysSinceBirthday}/42 nach Wechsel): Die neue PJ-Energie ${info.currentPJ} ist noch frisch, alte Energie ${info.previousPJ} klingt nach. Das verdient eine explizite Erwähnung.`
+          : `\n⚠ UEBERGANGSPHASE (innerhalb 6 Wochen VOR Geburtstag, noch ${info.daysUntilNextBirthday} Tage bis Wechsel): Aktuelles PJ ${info.currentPJ} klingt aus, kommendes PJ ${info.nextPJ} ist energetisch schon spuerbar. Das verdient eine explizite Erwähnung.`)
         : '';
 
       return `
 
 PERSOENLICHES JAHR IM DETAIL — ${label} (heute: ${todayStr}):
 - Aktuelles PJ: ${info.currentPJ} (aktiv vom ${info.startDate} bis ${info.endDate})
-- Aktueller Persoenlicher Monat (${todayStr.slice(3,5)}/${today.getFullYear()}): PM ${cm ? cm.pm : 'n/a'}
-- Naechstes PJ ab ${info.endDate}: ${info.nextPJ}
-- Uebernaechstes PJ ab ${String(info.birthDay).padStart(2,'0')}.${String(info.birthMonth).padStart(2,'0')}.${info.endYear + 1}: ${info.nextPJ2}
+- Aktueller Persönlicher Monat (${todayStr.slice(3,5)}/${today.getFullYear()}): PM ${cm ? cm.pm : 'n/a'}
+- Nächstes PJ ab ${info.endDate}: ${info.nextPJ}
+- Übernächstes PJ ab ${String(info.birthDay).padStart(2,'0')}.${String(info.birthMonth).padStart(2,'0')}.${info.endYear + 1}: ${info.nextPJ2}
 
 12 PERSOENLICHE MONATE DES AKTUELLEN PJ ${info.currentPJ}:
 ${monthLines}${transitionNote}`;
@@ -866,20 +866,20 @@ ${monthLines}${transitionNote}`;
       const ancestryBlock = buildAncestryBlock();
       const hasAncestry = ancestryBlock !== '';
 
-      // PJ-Detailbloecke fuer alle Personen
+      // PJ-Detailblöcke für alle Personen
       const pj1Block = pjDetailBlock(p1, 'PERSON 1');
       const pj2Block = hasPair && p2 ? pjDetailBlock(p2, 'PERSON 2') : '';
       const pjKidsBlocks = hasKids ? getChildren().map((c, i) => pjDetailBlock(c, `KIND ${i+1}`)).join('\n') : '';
 
-      // Erweiterte Numerologie-Bloecke (A, B, D, E, F + C-Hinweis fuer Astrologie)
+      // Erweiterte Numerologie-Blöcke (A, B, D, E, F + C-Hinweis für Astrologie)
       const ext1Block = extendedNumerologyBlock(p1, 'PERSON 1');
       const ext2Block = hasPair && p2 ? extendedNumerologyBlock(p2, 'PERSON 2') : '';
       const extKidsBlocks = hasKids ? getChildren().map((c, i) => extendedNumerologyBlock(c, `KIND ${i+1}`)).join('\n') : '';
 
-      // Profi-Astrologie-Bloecke (Swiss Ephemeris). Falls swisseph nicht verfuegbar war (Vercel), Hinweis.
+      // Profi-Astrologie-Blöcke (Swiss Ephemeris). Falls swisseph nicht verfuegbar war (Vercel), Hinweis.
       function astroBlock(label, data) {
         if (!data) return '';
-        if (!data.available) return `\nASTROLOGIE-DATEN — ${label}: Swiss Ephemeris nicht verfuegbar in dieser Umgebung. ${data.reason || ''} Bitte App lokal starten fuer Profi-Astrologie. Approximationen aus Geburtsdatum verwenden.`;
+        if (!data.available) return `\nASTROLOGIE-DATEN — ${label}: Swiss Ephemeris nicht verfuegbar in dieser Umgebung. ${data.reason || ''} Bitte App lokal starten für Profi-Astrologie. Approximationen aus Geburtsdatum verwenden.`;
         const p = data.planets || {};
         const n = data.nodes || {};
         const asc = data.ascendant;
@@ -898,7 +898,7 @@ ${monthLines}${transitionNote}`;
         s += `\n- Pluto: ${p.pluto?.formatted}`;
         if (p.chiron) s += `\n- Chiron: ${p.chiron.formatted}`;
         s += `\n- Nordknoten: ${n.north?.formatted}`;
-        s += `\n- Suedknoten: ${n.south?.formatted}`;
+        s += `\n- Südknoten: ${n.south?.formatted}`;
         if (asc) s += `\n- Aszendent: ${asc.formatted}`;
         else s += `\n- Aszendent: nicht berechnet (Geburtszeit oder Geburtsort fehlt)`;
         if (mc) s += `\n- MC (Medium Coeli): ${mc.formatted}`;
@@ -974,74 +974,74 @@ PFLICHTREGELN für NAMEN-CARD:
 Für Essenz (letzter Satz, gross): [ESSENZ:Text]
 Für normalen Fliesstext: einfach Text ohne Markierung.
 
-Erstelle folgende Sektionen mit erheblicher Tiefe. ZIELLAENGE: durchschnittlich 1500 Woerter pro Sektion (Kurz-Sektionen wie Essenz ausgenommen). Schreibe wie eine erfahrene Beraterin mit 20 Jahren Erfahrung, die Zeit hat. Keine generischen Phrasen, jede Aussage muss an konkrete Daten der Person ankoppeln.
+Erstelle folgende Sektionen mit erheblicher Tiefe. ZIELLAENGE: durchschnittlich 1500 Wörter pro Sektion (Kurz-Sektionen wie Essenz ausgenommen). Schreibe wie eine erfahrene Beraterin mit 20 Jahren Erfahrung, die Zeit hat. Keine generischen Phrasen, jede Aussage muss an konkrete Daten der Person ankoppeln.
 
-1. Der zentrale Code, mindestens 1200 Woerter, mit [ZAHL:X] für den Haupt-Code, dann ausfuehrliche Erklaerung des Lebensthemas, der Mission, der Schatten und Geschenke.
-${hasPair ? `2. Schlüsseldaten des Paares, mindestens 1500 Woerter, mit [KARTEN-GRID-START/END] für Kennenlernen & Hochzeit, dann [PERSON-GRID-START/END] für beide. Erwähne den Beziehungscode (Kompatibilitätszahl) tiefgehend.
-3. Beziehungsdynamik, mindestens 1500 Woerter, mit [DYNAMIK:...] und Erklärungstext, fuehrt durch Resonanz, Reibung und Wachstumsfelder.
-4. Astrologische Kernverbindungen, mindestens 1500 Woerter, mit [ASTRO-START/END], inklusive Synastrie-Aspekte.
-` : `2. Dein persönlicher Lebensweg, mindestens 1500 Woerter, ausfuehrlicher Fliesstext mit den Lebensphasen, Mustern, Talenten, Schattenseiten.
-3. Deine Namen-Energie, mindestens 1500 Woerter, mit [NAMEN-GRID-START/END], plus tiefe Interpretation jedes Aspekts (Seelendrang, Persoenlichkeit, Ausdruck).
+1. Der zentrale Code, mindestens 1200 Wörter, mit [ZAHL:X] für den Haupt-Code, dann ausführliche Erklärung des Lebensthemas, der Mission, der Schatten und Geschenke.
+${hasPair ? `2. Schlüsseldaten des Paares, mindestens 1500 Wörter, mit [KARTEN-GRID-START/END] für Kennenlernen & Hochzeit, dann [PERSON-GRID-START/END] für beide. Erwähne den Beziehungscode (Kompatibilitätszahl) tiefgehend.
+3. Beziehungsdynamik, mindestens 1500 Wörter, mit [DYNAMIK:...] und Erklärungstext, führt durch Resonanz, Reibung und Wachstumsfelder.
+4. Astrologische Kernverbindungen, mindestens 1500 Wörter, mit [ASTRO-START/END], inklusive Synastrie-Aspekte.
+` : `2. Dein persönlicher Lebensweg, mindestens 1500 Wörter, ausführlicher Fliesstext mit den Lebensphasen, Mustern, Talenten, Schattenseiten.
+3. Deine Namen-Energie, mindestens 1500 Wörter, mit [NAMEN-GRID-START/END], plus tiefe Interpretation jedes Aspekts (Seelendrang, Persönlichkeit, Ausdruck).
 `}
-${hasKids ? `5. Die Kinder, mindestens 1500 Woerter, mit [PERSON-GRID-START/END] pro Kind, ausfuehrlicher Fliesstext pro Kind mit Lebensaufgabe, Begabungen, Erziehungshinweisen.
+${hasKids ? `5. Die Kinder, mindestens 1500 Wörter, mit [PERSON-GRID-START/END] pro Kind, ausführlicher Fliesstext pro Kind mit Lebensaufgabe, Begabungen, Erziehungshinweisen.
 ` : ''}
-${state.constellation === 'family' ? `6. Das Familiensystem, mindestens 1500 Woerter, Fliesstext mit Rollen, Resonanzen, ungeloesten und erloesten Themen.
+${state.constellation === 'family' ? `6. Das Familiensystem, mindestens 1500 Wörter, Fliesstext mit Rollen, Resonanzen, ungeloesten und erlösten Themen.
 ` : ''}
-7. Herausforderung & Schluessel, mindestens 1000 Woerter, mit [HS-START/END] und vertiefenden Absaetzen zur Bedeutung beider Pole.
+7. Herausforderung & Schlüssel, mindestens 1000 Wörter, mit [HS-START/END] und vertiefenden Absätzen zur Bedeutung beider Pole.
 
-8. Dein aktuelles Persoenliches Jahr im Detail, DIE LAENGSTE Sektion der Analyse, mindestens 1800 Woerter. PFLICHT-AUFBAU:
-   (a) Beginne mit [PJ-HEADER:Dein aktuelles Persoenliches Jahr|PJ-Zahl|Startdatum bis Enddatum]. Werte aus dem PERSOENLICHES JAHR IM DETAIL-Block oben uebernehmen.
-   (b) Eroeffnungs-Absatz von 250 bis 350 Woertern zum Gesamt-Thema.
-   (c) Vier Quartals-Bloecke mit [QUARTAL:Titel|Zeitraum]. Pro Quartal mindestens 250 Woerter Fliesstext, der die Bewegung des Quartals beschreibt.
+8. Dein aktuelles Persönliches Jahr im Detail, DIE LAENGSTE Sektion der Analyse, mindestens 1800 Wörter. PFLICHT-AUFBAU:
+   (a) Beginne mit [PJ-HEADER:Dein aktuelles Persönliches Jahr|PJ-Zahl|Startdatum bis Enddatum]. Werte aus dem PERSOENLICHES JAHR IM DETAIL-Block oben uebernehmen.
+   (b) Eröffnungs-Absatz von 250 bis 350 Wörtern zum Gesamt-Thema.
+   (c) Vier Quartals-Blöcke mit [QUARTAL:Titel|Zeitraum]. Pro Quartal mindestens 250 Wörter Fliesstext, der die Bewegung des Quartals beschreibt.
    (d) Schwellenmonate als [HIGHLIGHT-MONAT:Monat Jahr|PM-Zahl|Was geschieht] einsetzen wo passend (Verdichtung, Master, LZ-Echo).
-   (e) Abschluss-Absatz mit Uebergangsphase / Wechsel zum naechsten PJ (mindestens 200 Woerter).
+   (e) Abschluss-Absatz mit Uebergangsphase / Wechsel zum naechsten PJ (mindestens 200 Wörter).
 
-9. Dein naechstes Persoenliches Jahr, mindestens 600 Woerter, mit [PJ-HEADER:Dein naechstes Persoenliches Jahr|PJ-Zahl|Startdatum bis Enddatum] und substanzieller Beschreibung des Hauptthemas, des Wechsel-Charakters und der konkreten Aenderungen.
+9. Dein naechstes Persönliches Jahr, mindestens 600 Wörter, mit [PJ-HEADER:Dein naechstes Persönliches Jahr|PJ-Zahl|Startdatum bis Enddatum] und substanzieller Beschreibung des Hauptthemas, des Wechsel-Charakters und der konkreten Aenderungen.
 
-10. Jahresenergien-Tabelle ueber 6 Jahre, mit [JAHRES-TABELLE:...] und [JAHR:...] Zeilen, geburtstagsbasiert (Format "11/2025 bis 11/2026"). Kurze einleitende Erklaerung erlaubt (200 Woerter), dann die Tabelle.
+10. Jahresenergien-Tabelle über 6 Jahre, mit [JAHRES-TABELLE:...] und [JAHR:...] Zeilen, geburtstagsbasiert (Format "11/2025 bis 11/2026"). Kurze einleitende Erklärung erlaubt (200 Wörter), dann die Tabelle.
 
-11. Pinnacles & Challenges, mindestens 1500 Woerter. Verwende [PINNACLE:Person|Nummer|Zeitraum|Zahl|Beschreibung|Challenge] fuer jeden der 4 Pinnacles pro Person. Zeitraum-Feld IMMER mit Alter UND Jahreszahlen, z.B. "0 bis 26 Jahre (1987 bis 2013)" oder "ab 36 Jahre (ab 2023)". Verwende die berechneten Pinnacle-Werte aus dem ERWEITERTE NUMEROLOGIE-DATEN-Block oben. Identifiziere welcher Pinnacle aktuell aktiv ist (siehe "status"-Hinweis im Datenblock) und ob bald ein Wechsel ansteht. Fuer den AKTUELL AKTIVEN Pinnacle: zwei separate Absaetze, einer zur Energie, einer zur Challenge. Pre- und Post-Pinnacle Phasen erwaehnen.
+11. Pinnacles & Challenges, mindestens 1500 Wörter. Verwende [PINNACLE:Person|Nummer|Zeitraum|Zahl|Beschreibung|Challenge] für jeden der 4 Pinnacles pro Person. Zeitraum-Feld IMMER mit Alter UND Jahreszahlen, z.B. "0 bis 26 Jahre (1987 bis 2013)" oder "ab 36 Jahre (ab 2023)". Verwende die berechneten Pinnacle-Werte aus dem ERWEITERTE NUMEROLOGIE-DATEN-Block oben. Identifiziere welcher Pinnacle aktuell aktiv ist (siehe "status"-Hinweis im Datenblock) und ob bald ein Wechsel ansteht. Für den AKTUELL AKTIVEN Pinnacle: zwei separate Absätze, einer zur Energie, einer zur Challenge. Pre- und Post-Pinnacle Phasen erwähnen.
 
-12. Namen-Numerologie, mindestens 1200 Woerter, mit [NAMEN-GRID-START/END] und vertiefendem Fliesstext zur Bedeutung jedes Namensanteils.
+12. Namen-Numerologie, mindestens 1200 Wörter, mit [NAMEN-GRID-START/END] und vertiefendem Fliesstext zur Bedeutung jedes Namensanteils.
 
-13. Erweiterte Zahlenebenen (Layer A), mindestens 1500 Woerter, neue Sektion. Verwende die Daten aus ERWEITERTE NUMEROLOGIE-DATEN-Block A:
+13. Erweiterte Zahlenebenen (Layer A), mindestens 1500 Wörter, neue Sektion. Verwende die Daten aus ERWEITERTE NUMEROLOGIE-DATEN-Block A:
    - Geburtstagszahl als eigenes Thema (was bedeutet "der ${'X'}." als Lebenscharakter)
    - Reifezahl/Maturity als Hinweis was nach Alter 35 erwacht
    - Rationale Denkzahl als Hinweis wie Entscheidungen getroffen werden
-   - Karmische Schulden (falls vorhanden): jede einzeln behandeln als Aufgabe aus frueheren Zyklen
+   - Karmische Schulden (falls vorhanden): jede einzeln behandeln als Aufgabe aus früheren Zyklen
    - Karma-Lektionen (fehlende Zahlen): jede einzeln als Lernfeld
-   - Hidden Passion: was die natuerliche Begabung ist die genaehrt werden will
+   - Hidden Passion: was die natuerliche Begabung ist die genährt werden will
    Strukturiere mit Sub-Headern als normaler Fliesstext, KEINE eigenen Marker noetig.
 
-14. Essence Transit (Layer B), mindestens 800 Woerter, neue Sektion. Verwende den ESSENCE-Wert aus dem Datenblock. Erklaere:
-   - Welcher Buchstabe aktuell die Energie des Lebensjahres faerbt
+14. Essence Transit (Layer B), mindestens 800 Wörter, neue Sektion. Verwende den ESSENCE-Wert aus dem Datenblock. Erkläre:
+   - Welcher Buchstabe aktuell die Energie des Lebensjahres färbt
    - Welche Essenz-Zahl daraus entsteht
    - Was diese Energie mit dem aktuellen PJ kombiniert ergibt
-   - Wann der naechste Buchstabe einsetzt und welche Energie er bringt
+   - Wann der nächste Buchstabe einsetzt und welche Energie er bringt
 
-15. Astrologische Tiefe (Layer C), mindestens 1200 Woerter, neue Sektion. Auf Basis von Geburtsdatum, Geburtszeit, Geburtsort:
-   - Mondzeichen (so genau wie moeglich aus Datum/Zeit/Ort approximieren, dann beschreiben)
+15. Astrologische Tiefe (Layer C), mindestens 1200 Wörter, neue Sektion. Auf Basis von Geburtsdatum, Geburtszeit, Geburtsort:
+   - Mondzeichen (so genau wie möglich aus Datum/Zeit/Ort approximieren, dann beschreiben)
    - Aszendent (nur falls Zeit und Ort verfuegbar)
-   - Mondknoten (Nord/Sued, siehe Datenblock fuer approximative Werte)
-   - Persoenliche Astrologie-Resonanzen (Sonne im X mit Mond in Y ergibt ...)
-   WICHTIG: Wenn Geburtszeit fehlt, erwaehne dass Mondzeichen/Aszendent nur als Annaeherung verfuegbar sind.
+   - Mondknoten (Nord/Sued, siehe Datenblock für approximative Werte)
+   - Persönliche Astrologie-Resonanzen (Sonne im X mit Mond in Y ergibt ...)
+   WICHTIG: Wenn Geburtszeit fehlt, erwähne dass Mondzeichen/Aszendent nur als Annäherung verfuegbar sind.
 
-16. Persoenlicher Tag heute (Layer E), mindestens 400 Woerter, kompakte aber konkrete Sektion. Welche Tagesenergie heute, was sie empfiehlt fuer das Lesen dieser Analyse.
+16. Persönlicher Tag heute (Layer E), mindestens 400 Wörter, kompakte aber konkrete Sektion. Welche Tagesenergie heute, was sie empfiehlt für das Lesen dieser Analyse.
 
-17. Kosmische Zyklen: Saturn & Jupiter (Layer F), mindestens 1200 Woerter, neue Sektion. Verwende Saturn-Returns und Jupiter-Returns aus dem Datenblock:
+17. Kosmische Zyklen: Saturn & Jupiter (Layer F), mindestens 1200 Wörter, neue Sektion. Verwende Saturn-Returns und Jupiter-Returns aus dem Datenblock:
    - Erster Saturn-Return (~Alter 29-30): wichtige Lebensschwelle, wenn vergangen erinnern was war, wenn kommend vorbereiten
    - Zweiter Saturn-Return (~Alter 58-60): zweite grosse Schwelle
-   - Jupiter-Returns alle 12 Jahre: kleine Glueckszyklen
+   - Jupiter-Returns alle 12 Jahre: kleine Glückszyklen
    - Wie kombinieren sich diese Returns mit dem aktuellen PJ
-   - Was bedeutet das fuer das aktuelle Lebensjahr
+   - Was bedeutet das für das aktuelle Lebensjahr
 
-${hasAncestry ? `18. Die Ahnenlinie, mindestens 1500 Woerter. Analysiere mit den ANGEGEBENEN Daten zu Mutter und/oder Vater: wiederholende Lebenszahlen, Mutterlinie vs. Vaterlinie, kulturelle Herkunftslinie, was die Hauptperson aus dem System weitertraegt. KEINE Aussagen ueber nicht angegebene Vorfahren. Schreibe als Fliesstext.
-` : ''}${hasNameChange ? `19. Namenswechsel & seine Energie, mindestens 1000 Woerter. Analysiere den/die Namenswechsel: was veraendert sich numerologisch? Welche Energie kommt, welche geht? [NAMEN-GRID-START/END] fuer den Vergleich.
+${hasAncestry ? `18. Die Ahnenlinie, mindestens 1500 Wörter. Analysiere mit den ANGEGEBENEN Daten zu Mutter und/oder Vater: wiederholende Lebenszahlen, Mutterlinie vs. Vaterlinie, kulturelle Herkunftslinie, was die Hauptperson aus dem System weitertraegt. KEINE Aussagen über nicht angegebene Vorfahren. Schreibe als Fliesstext.
+` : ''}${hasNameChange ? `19. Namenswechsel & seine Energie, mindestens 1000 Wörter. Analysiere den/die Namenswechsel: was veraendert sich numerologisch? Welche Energie kommt, welche geht? [NAMEN-GRID-START/END] für den Vergleich.
 20. Die Essenz, ein einziger Satz, mit [ESSENZ:Text]` : `19. Die Essenz, ein einziger Satz, mit [ESSENZ:Text]`}
 
 Schreibe tief, präzise, persönlich. Keine generischen Aussagen. Zahlen und astrologische Fakten exakt aus den gegebenen Daten ableiten.
 WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** und *kursiv* enthalten.
-EXTREM WICHTIG: Sei grosszuegig mit Laenge und Tiefe. Diese Analyse wird fuer CHF 200+ verkauft, sie muss diesem Preis entsprechen. Lieber zu lang als zu kurz. Wenn du Token-Budget hast, nutze es.`;
+EXTREM WICHTIG: Sei grosszügig mit Länge und Tiefe. Diese Analyse wird für CHF 200+ verkauft, sie muss diesem Preis entsprechen. Lieber zu lang als zu kurz. Wenn du Token-Budget hast, nutze es.`;
     }
 
     // ── LOADING CYCLE ──────────────────────────────────────────────
@@ -1144,16 +1144,16 @@ EXTREM WICHTIG: Sei grosszuegig mit Laenge und Tiefe. Diese Analyse wird fuer CH
           })
         });
         // Defensiv: erst als Text lesen, dann versuchen JSON zu parsen.
-        // Auf Vercel kommt bei Timeout HTML-Error-Page statt JSON zurueck.
+        // Auf Vercel kommt bei Timeout HTML-Error-Page statt JSON zurück.
         const rawText = await res.text();
         let data;
         try {
           data = JSON.parse(rawText);
         } catch (parseErr) {
           if (res.status === 504 || rawText.includes('timed out') || rawText.includes('FUNCTION_INVOCATION_TIMEOUT')) {
-            throw new Error('Die Generation hat das Zeit-Limit der Online-Demo (60 Sekunden) ueberschritten. Fuer die volle Tiefe bitte die App lokal starten (siehe LOCAL_SETUP.md). In der Online-Version wird automatisch eine Kurzversion erstellt; vermutlich braucht der Server gerade kurzfristig laenger als sonst, bitte erneut versuchen.');
+            throw new Error('Die Generation hat das Zeit-Limit der Online-Demo (60 Sekunden) ueberschritten. Für die volle Tiefe bitte die App lokal starten (siehe LOCAL_SETUP.md). In der Online-Version wird automatisch eine Kurzversion erstellt; vermutlich braucht der Server gerade kurzfristig länger als sonst, bitte erneut versuchen.');
           }
-          throw new Error(`Server-Antwort war kein gueltiges JSON (Status ${res.status}). Erste 200 Zeichen: ${rawText.slice(0, 200)}`);
+          throw new Error(`Server-Antwort war kein gültiges JSON (Status ${res.status}). Erste 200 Zeichen: ${rawText.slice(0, 200)}`);
         }
         if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
         stopLoader();
@@ -2378,7 +2378,7 @@ EXTREM WICHTIG: Sei grosszuegig mit Laenge und Tiefe. Diese Analyse wird fuer CH
                 ['01', 'Numerologie', 'Lebenszahl, Seelendrang, Persönlichkeit & Ausdruckskraft — aus Taufname und Geburtsdatum'],
                 ['02', 'Astrologie', 'Sternzeichen, kosmische Verbindungen & astrologische Resonanzen im System'],
                 ['03', 'Beziehungen', 'Dynamiken zwischen Partnern, Eltern & Kindern — das Familiensystem als Ganzes'],
-                ['04', 'Jahresprognosen', 'Persönliche Jahresenergien, Pinnacles & Challenges fuer die kommenden Jahre'],
+                ['04', 'Jahresprognosen', 'Persönliche Jahresenergien, Pinnacles & Challenges für die kommenden Jahre'],
               ].map(([num, title, desc]) => (
                 <div className="feature-item" key={num}>
                   <div className="feature-num">{num}</div>
@@ -2702,7 +2702,7 @@ EXTREM WICHTIG: Sei grosszuegig mit Laenge und Tiefe. Diese Analyse wird fuer CH
               ['relationship', '♡', 'Beziehungsdynamik', 'Verbindung, Resonanz & Partnerschaft'],
               ['personal', '◈', 'Persönlicher Lebensweg', 'Seele, Bestimmung & innere Kraft'],
               ['children_focus', '✧', 'Die Kinder', 'Seelenbild & Energien der Kinder'],
-              ['future', '◬', 'Zukunft & Jahresprognosen', 'Energien & Pinnacles fuer die kommenden Jahre'],
+              ['future', '◬', 'Zukunft & Jahresprognosen', 'Energien & Pinnacles für die kommenden Jahre'],
             ].map(([value, icon, title, desc]) => (
               <div className="select-card" data-value={value} key={value}>
                 <div className="card-top"><div className="card-icon">{icon}</div><div className="card-check">✓</div></div>
