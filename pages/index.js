@@ -811,7 +811,8 @@ ${monthLines}${transitionNote}`;
     }
 
     // ── PROMPT ─────────────────────────────────────────────────────
-    function buildPrompt() {
+    function buildPrompt(astroData) {
+      astroData = astroData || {};
       const hasPair = state.constellation === 'pair' || state.constellation === 'family';
       const hasKids = state.constellation === 'family' || state.constellation === 'solo_children';
       const p1 = getPerson('p1'), p2 = hasPair ? getPerson('p2') : null;
@@ -873,6 +874,39 @@ ${monthLines}${transitionNote}`;
       const ext2Block = hasPair && p2 ? extendedNumerologyBlock(p2, 'PERSON 2') : '';
       const extKidsBlocks = hasKids ? getChildren().map((c, i) => extendedNumerologyBlock(c, `KIND ${i+1}`)).join('\n') : '';
 
+      // Profi-Astrologie-Bloecke (Swiss Ephemeris). Falls swisseph nicht verfuegbar war (Vercel), Hinweis.
+      function astroBlock(label, data) {
+        if (!data) return '';
+        if (!data.available) return `\nASTROLOGIE-DATEN — ${label}: Swiss Ephemeris nicht verfuegbar in dieser Umgebung. ${data.reason || ''} Bitte App lokal starten fuer Profi-Astrologie. Approximationen aus Geburtsdatum verwenden.`;
+        const p = data.planets || {};
+        const n = data.nodes || {};
+        const asc = data.ascendant;
+        const mc = data.mc;
+        let s = `\nPROFI-ASTROLOGIE (Swiss Ephemeris) — ${label}:`;
+        if (data.coords) s += `\n- Geburtsort geocodiert: ${data.coords.display} (${data.coords.lat.toFixed(2)}, ${data.coords.lon.toFixed(2)})`;
+        s += `\n- Sonne: ${p.sun?.formatted}`;
+        s += `\n- Mond: ${p.moon?.formatted}`;
+        s += `\n- Merkur: ${p.mercury?.formatted}`;
+        s += `\n- Venus: ${p.venus?.formatted}`;
+        s += `\n- Mars: ${p.mars?.formatted}`;
+        s += `\n- Jupiter: ${p.jupiter?.formatted}`;
+        s += `\n- Saturn: ${p.saturn?.formatted}`;
+        s += `\n- Uranus: ${p.uranus?.formatted}`;
+        s += `\n- Neptun: ${p.neptune?.formatted}`;
+        s += `\n- Pluto: ${p.pluto?.formatted}`;
+        if (p.chiron) s += `\n- Chiron: ${p.chiron.formatted}`;
+        s += `\n- Nordknoten: ${n.north?.formatted}`;
+        s += `\n- Suedknoten: ${n.south?.formatted}`;
+        if (asc) s += `\n- Aszendent: ${asc.formatted}`;
+        else s += `\n- Aszendent: nicht berechnet (Geburtszeit oder Geburtsort fehlt)`;
+        if (mc) s += `\n- MC (Medium Coeli): ${mc.formatted}`;
+        if (data.note) s += `\n- HINWEIS: ${data.note}`;
+        return s;
+      }
+      const astro1Block = astroBlock('PERSON 1', astroData['PERSON 1']);
+      const astro2Block = hasPair && p2 ? astroBlock('PERSON 2', astroData['PERSON 2']) : '';
+      const astroKidsBlocks = hasKids ? getChildren().map((c, i) => astroBlock(`KIND ${i+1}`, astroData[`KIND ${i+1}`])).join('\n') : '';
+
       const langInstructions = {
         de: 'SPRACHE: Schweizer Hochdeutsch. KEIN scharfes S (kein ß), IMMER ss schreiben (gross/muss/heisst/Schluss/Strasse/Spass). STIL: KEINE Gedankenstriche (kein — kein –), verwende stattdessen Kommas, Doppelpunkte oder kurze Saetze. Bindestriche in zusammengesetzten Woertern sind OK.',
         en: 'LANGUAGE: Write the entire analysis in English (modern, warm, informal "you"). STYLE: NO em-dashes (—) and NO en-dashes (–), use commas, colons, or short sentences instead. Hyphens in compound words are fine. Keep structural markers as technical tags, but content inside markers in English.',
@@ -911,6 +945,9 @@ ${pjKidsBlocks}
 ${ext1Block}
 ${ext2Block}
 ${extKidsBlocks}
+${astro1Block}
+${astro2Block}
+${astroKidsBlocks}
 
 Gib die Analyse als strukturierten Text zurück. Trenne Sektionen mit ~~~.
 Jede Sektion beginnt mit dem Titel, dann einem Zeilenumbruch, dann dem Inhalt.
@@ -1031,16 +1068,35 @@ EXTREM WICHTIG: Sei grosszuegig mit Laenge und Tiefe. Diese Analyse wird fuer CH
       startLoader();
       const p1 = getPerson('p1'), p2 = getPerson('p2');
       const hasPair = state.constellation === 'pair' || state.constellation === 'family';
+      const hasKids = state.constellation === 'family' || state.constellation === 'solo_children';
       let name = p1.firstName || state.lead.name || 'Deine Analyse';
       if (hasPair && p2.firstName) name += ` & ${p2.firstName}`;
       const nameEl = document.getElementById('result-name');
       if (nameEl) nameEl.textContent = name;
+
+      // Profi-Astrologie pro Person (Swiss Ephemeris, lokal verfuegbar, auf Vercel ggf. Fallback)
+      const persons = [['PERSON 1', p1]];
+      if (hasPair && p2) persons.push(['PERSON 2', p2]);
+      if (hasKids) getChildren().forEach((c, i) => persons.push([`KIND ${i+1}`, c]));
+      const astroData = {};
+      for (const [label, p] of persons) {
+        if (!p.birthDate) continue;
+        try {
+          const r = await fetch('/api/astrology', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ birthDate: p.birthDate, birthTime: p.birthTime, birthPlace: p.birthPlace }),
+          });
+          if (r.ok) astroData[label] = await r.json();
+        } catch (err) { /* fallback im Prompt */ }
+      }
+
       try {
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            messages: [{ role: 'user', content: buildPrompt() }],
+            messages: [{ role: 'user', content: buildPrompt(astroData) }],
             language: state.language,
             lead: {
               name: state.lead.name,
