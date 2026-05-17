@@ -59,6 +59,7 @@ export default async function handler(req, res) {
 
   // ── ANTHROPIC API ──────────────────────────────────────────────
   try {
+    console.log('[chat] Calling Anthropic API. Key present:', !!process.env.ANTHROPIC_API_KEY, 'Key prefix:', process.env.ANTHROPIC_API_KEY?.slice(0, 12));
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -75,14 +76,28 @@ export default async function handler(req, res) {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      return res.status(response.status).json(error);
+      const errorText = await response.text();
+      let errorJson;
+      try { errorJson = JSON.parse(errorText); } catch (e) { errorJson = { error: { message: errorText } }; }
+      console.error('[chat] Anthropic returned non-OK status', response.status, errorJson);
+      return res.status(response.status).json(errorJson);
     }
 
     const data = await response.json();
     return res.status(200).json(data);
   } catch (err) {
-    return res.status(500).json({ error: { message: err.message } });
+    // Detaillierter Fehler in Server-Logs (Terminal von npm run electron:dev)
+    console.error('[chat] Fetch failed. Full error:', err);
+    console.error('[chat] err.cause:', err.cause);
+    console.error('[chat] err.code:', err.code);
+    const detail = err.cause?.message || err.cause?.code || err.code || 'unbekannt';
+    return res.status(500).json({
+      error: {
+        message: `${err.message} (Detail: ${detail}). Bitte schau in der Terminal-Konsole nach dem genauen Fehler. Haeufige Ursachen: Internet nicht erreichbar, falscher API-Key, oder API-Key fehlt in .env.local.`,
+        original: err.message,
+        cause: err.cause?.message || err.cause?.code || null,
+      }
+    });
   }
 }
 
