@@ -17,7 +17,7 @@ export default function Home() {
     function getFlow() {
       const hasPair = state.constellation === 'pair' || state.constellation === 'family';
       const hasKids = state.constellation === 'family' || state.constellation === 'solo_children';
-      let f = ['splash', 'lead', 'constellation', 'person1'];
+      let f = ['splash', 'constellation', 'person1'];
       if (hasPair) f.push('person2', 'couple');
       if (hasKids) f.push('children');
       f.push('ancestry', 'focus', 'loading', 'result');
@@ -43,8 +43,8 @@ export default function Home() {
       const flow = getFlow();
       const idx = flow.indexOf(cur);
       const prog = document.getElementById('nav-progress');
-      const steps = flow.filter(s => !['splash', 'lead', 'loading', 'result'].includes(s));
-      if (['splash', 'lead', 'loading', 'result'].includes(cur)) {
+      const steps = flow.filter(s => !['splash', 'loading', 'result'].includes(s));
+      if (['splash', 'loading', 'result'].includes(cur)) {
         prog.innerHTML = '';
       } else {
         prog.innerHTML = steps.map((s) => {
@@ -1069,7 +1069,7 @@ EXTREM WICHTIG: Sei grosszuegig mit Laenge und Tiefe. Diese Analyse wird fuer CH
       const p1 = getPerson('p1'), p2 = getPerson('p2');
       const hasPair = state.constellation === 'pair' || state.constellation === 'family';
       const hasKids = state.constellation === 'family' || state.constellation === 'solo_children';
-      let name = p1.firstName || state.lead.name || 'Deine Analyse';
+      let name = p1.firstName || 'Deine Analyse';
       if (hasPair && p2.firstName) name += ` & ${p2.firstName}`;
       const nameEl = document.getElementById('result-name');
       if (nameEl) nameEl.textContent = name;
@@ -1098,12 +1098,6 @@ EXTREM WICHTIG: Sei grosszuegig mit Laenge und Tiefe. Diese Analyse wird fuer CH
           body: JSON.stringify({
             messages: [{ role: 'user', content: buildPrompt(astroData) }],
             language: state.language,
-            lead: {
-              name: state.lead.name,
-              email: state.lead.email,
-              constellation: state.constellation,
-              focus: state.focus,
-            },
           })
         });
         // Defensiv: erst als Text lesen, dann versuchen JSON zu parsen.
