@@ -1106,8 +1106,19 @@ EXTREM WICHTIG: Sei grosszuegig mit Laenge und Tiefe. Diese Analyse wird fuer CH
             },
           })
         });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error.message);
+        // Defensiv: erst als Text lesen, dann versuchen JSON zu parsen.
+        // Auf Vercel kommt bei Timeout HTML-Error-Page statt JSON zurueck.
+        const rawText = await res.text();
+        let data;
+        try {
+          data = JSON.parse(rawText);
+        } catch (parseErr) {
+          if (res.status === 504 || rawText.includes('timed out') || rawText.includes('FUNCTION_INVOCATION_TIMEOUT')) {
+            throw new Error('Die Generation hat das Zeit-Limit der Online-Demo (60 Sekunden) ueberschritten. Fuer die volle Tiefe bitte die App lokal starten (siehe LOCAL_SETUP.md). In der Online-Version wird automatisch eine Kurzversion erstellt; vermutlich braucht der Server gerade kurzfristig laenger als sonst, bitte erneut versuchen.');
+          }
+          throw new Error(`Server-Antwort war kein gueltiges JSON (Status ${res.status}). Erste 200 Zeichen: ${rawText.slice(0, 200)}`);
+        }
+        if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
         stopLoader();
         renderResult(data.content?.[0]?.text || '');
       } catch (err) {

@@ -52,6 +52,11 @@ export default async function handler(req, res) {
     }
   }
 
+  // Vercel Hobby hat 60s Timeout. Lokal: unbegrenzt.
+  // Auf Vercel reduzieren wir das Budget damit die Generation in <55s passt.
+  const isVercel = process.env.VERCEL === '1';
+  const maxTokens = isVercel ? 8000 : 32000;
+
   // ── ANTHROPIC API ──────────────────────────────────────────────
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -63,8 +68,8 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-opus-4-5',
-        max_tokens: 32000,
-        system: systemPrompt,
+        max_tokens: maxTokens,
+        system: systemPrompt + (isVercel ? '\n\nWICHTIG: Halte dich KURZ und KOMPAKT. Diese Demo-Umgebung hat ein 60-Sekunden-Limit. Schreibe pro Sektion maximal 500 Woerter. Die volle Tiefe gibts in der lokalen Version.' : ''),
         messages,
       }),
     });
