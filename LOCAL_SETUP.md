@@ -59,6 +59,30 @@ npm run dev
 Warte bis "Ready - started server on 0.0.0.0:3000" steht.
 Oeffne dann im Browser: **http://localhost:3000**
 
+### Schritt 5 (optional): Native App-Bundle erstellen
+
+#### Mac: FamilienCode.app generieren
+
+Einmalig im Terminal:
+```bash
+bash build-mac-app.sh
+```
+
+Das erstellt `FamilienCode.app` im Projekt-Ordner. Susana kann die App in den Programme-Ordner ziehen und wie jede andere App nutzen (Spotlight, Launchpad, Dock).
+
+**Beim ersten Start:** macOS zeigt evtl Sicherheitswarnung (App von nicht-identifiziertem Entwickler). Loesung: Rechtsklick auf die App → "Oeffnen" → im Dialog "Oeffnen" bestaetigen. Danach laeuft sie normal.
+
+#### Windows: PowerShell-Launcher ohne Terminal
+
+1. Rechtsklick auf `start-windows.ps1` → "Eigenschaften" → unten "Zulassen" anklicken (falls Windows das Script blockiert)
+2. Verknuepfung erstellen: Rechtsklick → "Verknuepfung erstellen"
+3. Verknuepfung umbenennen zu "FamilienCode"
+4. Eigenschaften der Verknuepfung → Ziel aendern auf:
+   `powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:\Pfad\zu\start-windows.ps1"`
+5. Icon zuweisen (rechte Eigenschaften → Anderes Symbol)
+
+Doppelklick auf die Verknuepfung startet jetzt die App im Hintergrund. Beenden via `stop-windows.bat`.
+
 ## Taegliche Nutzung (nach der Installation)
 
 Du hast zwei Optionen:
@@ -119,3 +143,18 @@ npm install
 ## Fragen
 
 Bei Problemen: kontaktiere Mauro.
+
+---
+
+## Anhang: Vercel passwort-geschuetzt (fuer Mauro)
+
+Die Vercel-Version unter https://familien-code-v2.vercel.app ist standardmaessig offen. Um sie mit Passwort zu schuetzen:
+
+1. Vercel Dashboard oeffnen, das Projekt `familien-code-v2` waehlen
+2. Settings → Environment Variables
+3. Zwei neue Variablen anlegen (Production scope):
+   - `BASIC_AUTH_USER` = z.B. `susana`
+   - `BASIC_AUTH_PASS` = z.B. `dein-langes-passwort-2026`
+4. Redeploy ausloesen (oder einfach neuen Commit pushen)
+
+Beim Aufruf der URL erscheint dann ein Browser-Passwort-Dialog. Lokal ist Auth deaktiviert.
