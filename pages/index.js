@@ -321,7 +321,107 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
     function red(n) { if (n === 11 || n === 22 || n === 33) return n; if (n < 10) return n; return red(String(n).split('').reduce((a, d) => a + parseInt(d), 0)); }
     function lifeNum(d) { if (!d) return 'n/a'; const dg = d.replace(/\D/g, ''); if (!dg) return 'n/a'; return red(dg.split('').reduce((a, c) => a + parseInt(c), 0)); }
     function nameNums(full) { const c = full.toUpperCase().replace(/[^A-Z]/g, ''); let s = 0, p = 0, e = 0; for (const ch of c) { const v = LM[ch] || 0; e += v; if (VO.has(ch)) s += v; else p += v; } return { soul: red(s) || 'n/a', personality: red(p) || 'n/a', expression: red(e) || 'n/a' }; }
-    function persYear(d) { if (!d) return 'n/a'; const pt = d.split('.'); if (pt.length < 2) return 'n/a'; return red(parseInt(pt[0]) + parseInt(pt[1]) + 9); }
+
+    // ── PERSOENLICHES JAHR (geburtstagsbasiert, dynamisch) ──────────
+    // Quersumme einer Zahl (ohne Master-Reduktion)
+    function digitSum(n) { return String(n).split('').reduce((a, d) => a + parseInt(d || 0, 10), 0); }
+    // Berechnet PJ-Zahl fuer einen gegebenen "Startjahr" (Jahr in dem das PJ am Geburtstag startete)
+    function calcPJ(birthDay, birthMonth, startYear) {
+      // Klassisch: Tag + Monat + Quersumme(Jahr), dann reduziert mit Master-Erhalt
+      const ys = digitSum(startYear);
+      return red(birthDay + birthMonth + ys);
+    }
+    // Liefert reichhaltige Info zum aktuellen PJ basierend auf heute
+    function getPersonalYearInfo(birthDate) {
+      if (!birthDate) return null;
+      const pt = birthDate.split('.');
+      if (pt.length < 2) return null;
+      const day = parseInt(pt[0], 10);
+      const month = parseInt(pt[1], 10);
+      if (!day || !month || month < 1 || month > 12) return null;
+
+      const today = new Date();
+      const todayYear = today.getFullYear();
+      const todayMonth = today.getMonth() + 1;
+      const todayDay = today.getDate();
+
+      // Hatte der Geburtstag dieses Kalenderjahr schon stattgefunden?
+      const hadBirthday = (todayMonth > month) || (todayMonth === month && todayDay >= day);
+      const startYear = hadBirthday ? todayYear : todayYear - 1;
+      const endYear = startYear + 1;
+
+      // Daten als String formatieren (TT.MM.JJJJ)
+      const fmt = (d, m, y) => `${String(d).padStart(2, '0')}.${String(m).padStart(2, '0')}.${y}`;
+      const startDate = fmt(day, month, startYear);
+      const endDate = fmt(day, month, endYear);
+
+      // Uebergangsphase: ±6 Wochen (42 Tage) um Geburtstag
+      const todayDate = new Date(todayYear, todayMonth - 1, todayDay);
+      const lastBirthday = new Date(startYear, month - 1, day);
+      const nextBirthday = new Date(endYear, month - 1, day);
+      const daysSinceBirthday = Math.floor((todayDate - lastBirthday) / 86400000);
+      const daysUntilNextBirthday = Math.floor((nextBirthday - todayDate) / 86400000);
+      const inTransitionAfter = daysSinceBirthday >= 0 && daysSinceBirthday <= 42;
+      const inTransitionBefore = daysUntilNextBirthday >= 0 && daysUntilNextBirthday <= 42;
+      const inTransition = inTransitionAfter || inTransitionBefore;
+
+      const currentPJ = calcPJ(day, month, startYear);
+      const previousPJ = calcPJ(day, month, startYear - 1);
+      const nextPJ = calcPJ(day, month, startYear + 1);
+      const nextPJ2 = calcPJ(day, month, startYear + 2);
+
+      return {
+        currentPJ, previousPJ, nextPJ, nextPJ2,
+        startYear, endYear, startDate, endDate,
+        inTransition, inTransitionAfter, inTransitionBefore,
+        daysSinceBirthday, daysUntilNextBirthday,
+        birthDay: day, birthMonth: month,
+      };
+    }
+    // Backward-compatible: gibt nur die Zahl zurueck (fuer alte Aufrufe)
+    function persYear(birthDate) {
+      const info = getPersonalYearInfo(birthDate);
+      return info ? info.currentPJ : 'n/a';
+    }
+
+    // ── PERSOENLICHE MONATE ─────────────────────────────────────────
+    // Liefert die 12 Monate des aktuellen PJ (vom Geburtsmonat des aktuellen PJ-Starts ab)
+    function getPersonalMonths(birthDate) {
+      const info = getPersonalYearInfo(birthDate);
+      if (!info) return [];
+      const monthNames = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+      const out = [];
+      // Beginne mit dem Monat des PJ-Starts (= Geburtsmonat)
+      for (let i = 0; i < 12; i++) {
+        const monthIdx = ((info.birthMonth - 1 + i) % 12); // 0-11
+        const calendarMonth = monthIdx + 1;
+        const year = info.startYear + Math.floor((info.birthMonth - 1 + i) / 12);
+        // PM = PJ + Kalendermonat-Zahl, reduziert mit Master-Erhalt
+        const pm = red(info.currentPJ + calendarMonth);
+        out.push({ name: monthNames[monthIdx], calendarMonth, year, pm });
+      }
+      return out;
+    }
+    // Schwellenmonate identifizieren (PM == PJ, Master Number, oder PM == LZ)
+    function identifyKeyMonths(months, currentPJ, lifeNumber) {
+      return months.map(m => {
+        const flags = [];
+        if (m.pm === currentPJ) flags.push('Verdichtungsmonat (PM = PJ)');
+        if (m.pm === 11 || m.pm === 22 || m.pm === 33) flags.push('Meistermonat');
+        if (lifeNumber && m.pm === lifeNumber) flags.push('Lebensaufgabe-Echo (PM = LZ)');
+        return { ...m, flags };
+      });
+    }
+    // Aktueller Persoenlicher Monat (in welchem PM ist die Person heute)
+    function getCurrentPersonalMonth(birthDate) {
+      const info = getPersonalYearInfo(birthDate);
+      if (!info) return null;
+      const today = new Date();
+      const calendarMonth = today.getMonth() + 1;
+      const pm = red(info.currentPJ + calendarMonth);
+      return { calendarMonth, pm };
+    }
+
     function zodiac(d) {
       if (!d) return 'unbekannt';
       const pt = d.split('.'); if (pt.length < 2) return 'unbekannt';
@@ -349,7 +449,45 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
       if (!p.firstName) return '';
       const full = `${p.firstName} ${p.lastName}`.trim();
       const n = nameNums(full);
-      return `\n${label}: ${full}\n- Geburtsdatum: ${p.birthDate || 'unbekannt'}\n- Geburtszeit: ${p.birthTime || 'unbekannt'}\n- Geburtsort: ${p.birthPlace || 'unbekannt'}\n- Lebenszahl: ${lifeNum(p.birthDate)}\n- Seelendrang: ${n.soul}\n- Persönlichkeitszahl: ${n.personality}\n- Ausdruckszahl: ${n.expression}\n- Persönliches Jahr 2025: ${persYear(p.birthDate)}\n- Sternzeichen: ${zodiac(p.birthDate)}`;
+      const pjInfo = getPersonalYearInfo(p.birthDate);
+      const pjStr = pjInfo
+        ? `${pjInfo.currentPJ} (aktiv vom ${pjInfo.startDate} bis ${pjInfo.endDate})`
+        : 'n/a';
+      return `\n${label}: ${full}\n- Geburtsdatum: ${p.birthDate || 'unbekannt'}\n- Geburtszeit: ${p.birthTime || 'unbekannt'}\n- Geburtsort: ${p.birthPlace || 'unbekannt'}\n- Lebenszahl: ${lifeNum(p.birthDate)}\n- Seelendrang: ${n.soul}\n- Persönlichkeitszahl: ${n.personality}\n- Ausdruckszahl: ${n.expression}\n- Persoenliches Jahr (aktuell aktiv): ${pjStr}\n- Sternzeichen: ${zodiac(p.birthDate)}`;
+    }
+
+    // Baut den detaillierten PJ-Block fuer den Prompt (12 Monate, Schwellen, naechste PJs, Uebergangsphase)
+    function pjDetailBlock(p, label) {
+      if (!p.firstName || !p.birthDate) return '';
+      const info = getPersonalYearInfo(p.birthDate);
+      if (!info) return '';
+      const lz = lifeNum(p.birthDate);
+      const months = identifyKeyMonths(getPersonalMonths(p.birthDate), info.currentPJ, lz);
+      const cm = getCurrentPersonalMonth(p.birthDate);
+      const today = new Date();
+      const todayStr = `${String(today.getDate()).padStart(2,'0')}.${String(today.getMonth()+1).padStart(2,'0')}.${today.getFullYear()}`;
+
+      const monthLines = months.map(m => {
+        const flag = m.flags.length ? ` [${m.flags.join(' · ')}]` : '';
+        return `  ${String(m.calendarMonth).padStart(2,'0')}/${m.year} ${m.name.padEnd(10)} → PM ${m.pm}${flag}`;
+      }).join('\n');
+
+      const transitionNote = info.inTransition
+        ? (info.inTransitionAfter
+          ? `\n⚠ UEBERGANGSPHASE (innerhalb 6 Wochen NACH Geburtstag, Tag ${info.daysSinceBirthday}/42 nach Wechsel): Die neue PJ-Energie ${info.currentPJ} ist noch frisch, alte Energie ${info.previousPJ} klingt nach. Das verdient eine explizite Erwaehnung.`
+          : `\n⚠ UEBERGANGSPHASE (innerhalb 6 Wochen VOR Geburtstag, noch ${info.daysUntilNextBirthday} Tage bis Wechsel): Aktuelles PJ ${info.currentPJ} klingt aus, kommendes PJ ${info.nextPJ} ist energetisch schon spuerbar. Das verdient eine explizite Erwaehnung.`)
+        : '';
+
+      return `
+
+PERSOENLICHES JAHR IM DETAIL — ${label} (heute: ${todayStr}):
+- Aktuelles PJ: ${info.currentPJ} (aktiv vom ${info.startDate} bis ${info.endDate})
+- Aktueller Persoenlicher Monat (${todayStr.slice(3,5)}/${today.getFullYear()}): PM ${cm ? cm.pm : 'n/a'}
+- Naechstes PJ ab ${info.endDate}: ${info.nextPJ}
+- Uebernaechstes PJ ab ${String(info.birthDay).padStart(2,'0')}.${String(info.birthMonth).padStart(2,'0')}.${info.endYear + 1}: ${info.nextPJ2}
+
+12 PERSOENLICHE MONATE DES AKTUELLEN PJ ${info.currentPJ}:
+${monthLines}${transitionNote}`;
     }
 
     // ── PROMPT ─────────────────────────────────────────────────────
@@ -405,6 +543,11 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
       const ancestryBlock = buildAncestryBlock();
       const hasAncestry = ancestryBlock !== '';
 
+      // PJ-Detailbloecke fuer alle Personen
+      const pj1Block = pjDetailBlock(p1, 'PERSON 1');
+      const pj2Block = hasPair && p2 ? pjDetailBlock(p2, 'PERSON 2') : '';
+      const pjKidsBlocks = hasKids ? getChildren().map((c, i) => pjDetailBlock(c, `KIND ${i+1}`)).join('\n') : '';
+
       const langInstructions = {
         de: 'SPRACHE: Schweizer Hochdeutsch. KEIN scharfes S (kein ß), IMMER ss schreiben (gross/muss/heisst/Schluss/Strasse/Spass). STIL: KEINE Gedankenstriche (kein — kein –), verwende stattdessen Kommas, Doppelpunkte oder kurze Saetze. Bindestriche in zusammengesetzten Woertern sind OK.',
         en: 'LANGUAGE: Write the entire analysis in English (modern, warm, informal "you"). STYLE: NO em-dashes (—) and NO en-dashes (–), use commas, colons, or short sentences instead. Hyphens in compound words are fine. Keep structural markers as technical tags, but content inside markers in English.',
@@ -437,6 +580,9 @@ ${nameNumsText(nn1, 'PERSON 1')}
 ${nn2 ? nameNumsText(nn2, 'PERSON 2') : ''}
 ${nnKids.map((nn, i) => nameNumsText(nn, `KIND ${i+1}`)).join('\n')}
 ${ancestryBlock}
+${pj1Block}
+${pj2Block}
+${pjKidsBlocks}
 
 Gib die Analyse als strukturierten Text zurück. Trenne Sektionen mit ~~~.
 Jede Sektion beginnt mit dem Titel, dann einem Zeilenumbruch, dann dem Inhalt.
@@ -449,7 +595,7 @@ Für 2-spaltige Info-Karten: [KARTEN-GRID-START] ... [KARTE:Eyebrow|Titel|Untert
 Für Beziehungs-Dynamik: [DYNAMIK:SIE-Label|SIE-Zahl|ER-Label|ER-Zahl|Resonanz-Text]
 Für astrologische Verbindungen als Karten: [ASTRO-START] ... [ASTRO:Symbol|Titel|Text] ... [ASTRO-END]
 Für Herausforderung & Schlüssel 2-spaltig: [HS-START] ... [HERAUSFORDERUNG:Text] ... [SCHLUESSEL:Text] ... [HS-END]
-Für Jahresenergien-Tabelle: Nur so viele Spalten wie tatsächlich Personen vorhanden sind. Verwende: [JAHRES-TABELLE:${[p1.firstName, hasPair && p2?.firstName, ...(hasKids ? getChildren().map(c => c.firstName) : [])].filter(Boolean).join('|')}] gefolgt von Zeilen: [JAHR:2025|Zahl·Keyword${hasPair ? '|Zahl·Keyword' : ''}${hasKids ? getChildren().map(() => '|Zahl·Keyword').join('') : ''}]
+Für Jahresenergien-Tabelle: Nur so viele Spalten wie tatsächlich Personen vorhanden sind. Verwende: [JAHRES-TABELLE:${[p1.firstName, hasPair && p2?.firstName, ...(hasKids ? getChildren().map(c => c.firstName) : [])].filter(Boolean).join('|')}] gefolgt von Zeilen: [JAHR:Jahr-Bereich|Zahl·Keyword${hasPair ? '|Zahl·Keyword' : ''}${hasKids ? getChildren().map(() => '|Zahl·Keyword').join('') : ''}]. Verwende die ECHTEN, vorberechneten PJ-Werte aus dem PERSOENLICHES JAHR IM DETAIL-Block oben (nicht halluzinieren). Jahr-Bereich-Format: gib den Geburtstag-zu-Geburtstag Zeitraum an, z.B. "11/2025 bis 11/2026" statt "2025". Liste 6 Jahre auf, beginnend mit dem aktuell aktiven PJ.
 Für Pinnacles: [PINNACLE:Person|Nummer|Zeitraum|Zahl|Beschreibung|Challenge]
 Für Namen-Numerologie Cards: [NAMEN-GRID-START] ... [NAMEN-CARD:Name|Rolle|Seelendrang-Zahl|Seelendrang-Label|Pers-Zahl|Pers-Label|Ausdruck-Zahl|Ausdruck-Label|Beschreibung] ... [NAMEN-GRID-END]
 PFLICHTREGELN für NAMEN-CARD:
@@ -474,15 +620,30 @@ ${hasKids ? `5. Die Kinder — mit [PERSON-GRID-START/END] pro Kind, Fliesstext 
 ${state.constellation === 'family' ? `6. Das Familiensystem — Fliesstext mit Rollen
 ` : ''}
 7. Herausforderung & Schlüssel — mit [HS-START/END]
-8. Jahresenergien 2025–2030 — mit [JAHRES-TABELLE:...] und [JAHR:...] Zeilen
-9. Pinnacles & Challenges — mit [PINNACLE:...] für jede Person
-10. Namen-Numerologie — mit [NAMEN-GRID-START/END]
-${hasAncestry ? `${hasNameChange ? '11a' : '11'}. Die Ahnenlinie — was aus deiner Familie mitschwingt. Analysiere mit den ANGEGEBENEN Daten zu Mutter und/oder Vater: wiederholende Lebenszahlen ueber Generationen (z.B. Mutter LZ 11, Kind LZ 11 = Familienmuster), Mutterlinie (naehrend, empfangend) vs. Vaterlinie (schuetzend, strukturierend), kulturelle/energetische Herkunftslinie (Geburtsort), was die Hauptperson aus dem System weitertraegt oder transformiert. KEINE Aussagen ueber nicht angegebene Vorfahren. Schreibe als Fliesstext, integriere die berechneten Zahlen organisch.
-` : ''}${hasNameChange ? `11. Namenswechsel & seine Energie — analysiere den/die Namenswechsel: was verändert sich numerologisch? Welche Energie kommt, welche geht? Verwende [NAMEN-GRID-START/END] für den Vergleich.
-12. Die Essenz — mit [ESSENZ:Ein einziger Satz der alles zusammenfasst]` : `11. Die Essenz — mit [ESSENZ:Ein einziger Satz der alles zusammenfasst]`}
+
+8. Dein aktuelles Persoenliches Jahr im Detail — die HERZSTUECK-Sektion. Schreibe als persoenlichen Fliesstext, gegliedert nach Quartalen oder Phasen (NICHT Monat fuer Monat einzeln). Verwende die vorberechneten PJ- und PM-Daten aus dem PERSOENLICHES JAHR IM DETAIL-Block oben:
+   - Beginne mit dem Gesamt-Thema des aktuellen PJ (welche Energie, was wird gefordert, was wird geschenkt)
+   - Gliedere die 12 Monate in 4 Quartale (Q1 = Geburtstagsmonat + 2 folgende, Q2 = naechste 3, Q3 = naechste 3, Q4 = letzte 3 vor dem nachfolgenden Geburtstag). Verwende fuer jedes Quartal einen Sub-Header (z.B. "Erste Quartalsphase: November 2025 bis Januar 2026") und beschreibe die energetische Bewegung, die Schwellenmonate, die konkreten Themen
+   - Hebe Schwellenmonate explizit hervor: Verdichtungsmonate (wo PM = PJ), Meistermonate (PM 11/22/33), Lebensaufgabe-Echo-Monate (wo PM = LZ)
+   - Markiere den Halbjahres-Wechsel um den Geburtstag herum (sechs Monate nach Start ist der Halbjahres-Wendepunkt)
+   - Wenn der UEBERGANGSPHASE-Hinweis im Datenblock steht: erwaehne explizit dass die Person aktuell in dieser energetischen Vermischung steht und was das praktisch bedeutet
+   - Schliesse mit dem naechsten Geburtstag als Wechselpunkt: was kommt mit dem neuen PJ, was kann man jetzt schon spueren
+   - Sei konkret und praktisch: was tun, was lassen, wann handeln, wann ruhen
+   - Mindestens 600 Woerter Tiefe in dieser Sektion
+
+9. Vorausschau auf die naechsten zwei Persoenlichen Jahre — kurz aber substanziell (je ein Abschnitt). Beginne mit dem konkreten Wechseldatum (Geburtstag), dann zwei bis drei Saetze zum Hauptthema. Verwende die vorberechneten naechsten PJs.
+
+10. Jahresenergien-Vergleich aller Personen — mit [JAHRES-TABELLE:...] und [JAHR:...] Zeilen ueber 6 Jahre, geburtstagsbasiert (siehe Markierungsregel oben). Die Tabelle bietet den schnellen Querblick fuer Pair / Family / Kids.
+
+11. Pinnacles & Challenges — mit [PINNACLE:...] für jede Person. Identifiziere welcher Pinnacle aktuell aktiv ist und ob im aktuellen oder naechsten PJ ein Pinnacle-Wechsel ansteht.
+
+12. Namen-Numerologie — mit [NAMEN-GRID-START/END]
+${hasAncestry ? `${hasNameChange ? '13a' : '13'}. Die Ahnenlinie — was aus deiner Familie mitschwingt. Analysiere mit den ANGEGEBENEN Daten zu Mutter und/oder Vater: wiederholende Lebenszahlen ueber Generationen (z.B. Mutter LZ 11, Kind LZ 11 = Familienmuster), Mutterlinie (naehrend, empfangend) vs. Vaterlinie (schuetzend, strukturierend), kulturelle/energetische Herkunftslinie (Geburtsort), was die Hauptperson aus dem System weitertraegt oder transformiert. KEINE Aussagen ueber nicht angegebene Vorfahren. Schreibe als Fliesstext, integriere die berechneten Zahlen organisch.
+` : ''}${hasNameChange ? `13. Namenswechsel & seine Energie — analysiere den/die Namenswechsel: was verändert sich numerologisch? Welche Energie kommt, welche geht? Verwende [NAMEN-GRID-START/END] für den Vergleich.
+14. Die Essenz — mit [ESSENZ:Ein einziger Satz der alles zusammenfasst]` : `13. Die Essenz — mit [ESSENZ:Ein einziger Satz der alles zusammenfasst]`}
 
 Schreibe tief, präzise, persönlich. Keine generischen Aussagen. Zahlen und astrologische Fakten exakt aus den gegebenen Daten ableiten.
-WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** und *kursiv* enthalten. Die Jahresenergien MÜSSEN als [JAHRES-TABELLE] formatiert sein — KEIN Fliesstext mit "**2026 (Jahr 6):**" statt Tabelle.`;
+WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** und *kursiv* enthalten. Die Jahresenergien MÜSSEN als [JAHRES-TABELLE] formatiert sein, KEIN Fliesstext mit "**Jahr 6:**" statt Tabelle.`;
     }
 
     // ── LOADING CYCLE ──────────────────────────────────────────────
@@ -848,7 +1009,7 @@ WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** u
       'Das Familiensystem': 'Das Familiensystem betrachtet die Familie als energetisches Ganzes — welche Zahlen und Qualitäten dominieren, welche fehlen, wie die einzelnen Mitglieder sich gegenseitig spiegeln und ergänzen. Muster wiederholen sich oft über Generationen.',
       'Herausforderung & Schlüssel': 'Jede Lebenszahl bringt spezifische Herausforderungen mit — wiederkehrende Themen, die das Leben immer wieder aufwirft. Der Schlüssel ist der bewusste Umgang damit: nicht Widerstand, sondern Integration. Herausforderungen sind keine Schwächen, sondern Wachstumsfelder.',
       'Jahresenergien': 'Das Persönliche Jahr wird errechnet aus Geburtstag + Geburtsmonat + aktuellem Kalenderjahr. Es beschreibt, unter welchem energetischen Thema ein Jahr steht — von 1 (Neubeginn) bis 9 (Abschluss). Die neunjährigen Zyklen wiederholen sich lebenslang.',
-      'Deine Jahresenergien 2025–2029': 'Das Persönliche Jahr wird errechnet aus Geburtstag + Geburtsmonat + aktuellem Kalenderjahr. Es beschreibt, unter welchem energetischen Thema ein Jahr steht — von 1 (Neubeginn) bis 9 (Abschluss). Die neunjährigen Zyklen wiederholen sich lebenslang.',
+      'Deine Deine Jahresenergien — Vorausschau': 'Das Persönliche Jahr wird errechnet aus Geburtstag + Geburtsmonat + aktuellem Kalenderjahr. Es beschreibt, unter welchem energetischen Thema ein Jahr steht — von 1 (Neubeginn) bis 9 (Abschluss). Die neunjährigen Zyklen wiederholen sich lebenslang.',
       'Pinnacles & Challenges': 'Pinnacles sind längere Lebenszyklen (ca. 7–27 Jahre), die bestimmte Qualitäten in den Vordergrund bringen. Sie werden aus Geburtstag, -monat und -jahr errechnet. Challenges sind die spezifischen Lernthemen innerhalb jedes Pinnacles — die Reibungspunkte, die bewusste Entwicklung verlangen.',
       'Namen-Numerologie': 'Eine detaillierte Aufschlüsselung der Namen-Energie aller Familienmitglieder. Seelendrang, Persönlichkeit und Ausdruck zusammen zeigen, wie inneres Verlangen, äussere Wirkung und Gesamtpotenzial zueinander stehen — und wie die Mitglieder sich numerologisch spiegeln.',
       'Die Essenz': 'Ein einziger Satz, der das Wesen dieser Analyse zusammenfasst — die verdichtete Quintessenz aller Zahlen, Zeichen und Verbindungen.',
@@ -1659,7 +1820,7 @@ WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** u
                 ['01', 'Numerologie', 'Lebenszahl, Seelendrang, Persönlichkeit & Ausdruckskraft — aus Taufname und Geburtsdatum'],
                 ['02', 'Astrologie', 'Sternzeichen, kosmische Verbindungen & astrologische Resonanzen im System'],
                 ['03', 'Beziehungen', 'Dynamiken zwischen Partnern, Eltern & Kindern — das Familiensystem als Ganzes'],
-                ['04', 'Jahresprognosen', 'Persönliche Jahresenergien, Pinnacles & Challenges 2025–2029'],
+                ['04', 'Jahresprognosen', 'Persönliche Jahresenergien, Pinnacles & Challenges fuer die kommenden Jahre'],
               ].map(([num, title, desc]) => (
                 <div className="feature-item" key={num}>
                   <div className="feature-num">{num}</div>
@@ -1954,7 +2115,7 @@ WICHTIG: Verwende die strukturierten Tags konsequent. Fliesstext darf **fett** u
               ['relationship', '♡', 'Beziehungsdynamik', 'Verbindung, Resonanz & Partnerschaft'],
               ['personal', '◈', 'Persönlicher Lebensweg', 'Seele, Bestimmung & innere Kraft'],
               ['children_focus', '✧', 'Die Kinder', 'Seelenbild & Energien der Kinder'],
-              ['future', '◬', 'Zukunft & Jahresprognosen', 'Energien & Pinnacles 2025–2029'],
+              ['future', '◬', 'Zukunft & Jahresprognosen', 'Energien & Pinnacles fuer die kommenden Jahre'],
             ].map(([value, icon, title, desc]) => (
               <div className="select-card" data-value={value} key={value}>
                 <div className="card-top"><div className="card-icon">{icon}</div><div className="card-check">✓</div></div>
