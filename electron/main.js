@@ -1,76 +1,130 @@
 // electron/main.js
-// Electron-Main-Process fuer Familien-Code v2
-// Startet im production-Modus den Next.js-Server als child_process
-// und oeffnet ein BrowserWindow, das auf localhost:PORT zeigt.
-// Im development-Modus (NODE_ENV !== 'production') verbindet er sich nur
-// zum bereits laufenden `next dev` auf Port 3000.
+// Robust Electron main: startet Next.js als EMBEDDED Library (kein child_process).
+// Logs alles in eine Datei damit Susana bei Problemen rausschicken kann.
 
 const { app, BrowserWindow, Menu, shell, dialog } = require('electron');
 const path = require('path');
-const { spawn } = require('child_process');
+const fs = require('fs');
 const http = require('http');
 
 const isDev = !app.isPackaged;
-const PORT = isDev ? 3000 : 3456; // Production nutzt anderen Port um Konflikte zu vermeiden
+const PORT = isDev ? 3000 : 3456;
 
 let mainWindow = null;
-let nextProcess = null;
+let nextServer = null;
 
-// Warte bis HTTP-Server antwortet
-function waitForServer(port, timeoutMs = 30000) {
-  return new Promise((resolve, reject) => {
-    const start = Date.now();
-    const tryConnect = () => {
-      const req = http.get(`http://localhost:${port}`, () => resolve());
-      req.on('error', () => {
-        if (Date.now() - start > timeoutMs) {
-          reject(new Error(`Server auf Port ${port} nicht erreichbar nach ${timeoutMs}ms`));
-        } else {
-          setTimeout(tryConnect, 500);
-        }
-      });
-      req.setTimeout(2000, () => req.destroy());
-    };
-    tryConnect();
-  });
+// ── LOGGING ──────────────────────────────────────────────────────
+// Logs landen im User-Data-Verzeichnis (auf Windows: %APPDATA%\FamilienCode\app.log)
+const logFile = path.join(app.getPath('userData'), 'app.log');
+function log(...args) {
+  const line = `[${new Date().toISOString()}] ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')}\n`;
+  try { fs.appendFileSync(logFile, line); } catch (_) {}
+  console.log(line.trim());
+}
+process.on('uncaughtException', (err) => {
+  log('UNCAUGHT EXCEPTION:', err.stack || err.message);
+});
+process.on('unhandledRejection', (err) => {
+  log('UNHANDLED REJECTION:', err?.stack || err);
+});
+
+log('=== FamilienCode startet ===');
+log('isDev:', isDev, 'isPackaged:', app.isPackaged);
+log('Platform:', process.platform, 'Arch:', process.arch);
+log('Node:', process.versions.node, 'Electron:', process.versions.electron);
+log('userData:', app.getPath('userData'));
+log('__dirname:', __dirname);
+log('process.resourcesPath:', process.resourcesPath);
+
+// ── .env.local SUCHEN UND LADEN ──────────────────────────────────
+function loadEnvLocal() {
+  const candidates = [
+    path.join(app.getPath('userData'), '.env.local'),
+    path.join(path.dirname(app.getPath('exe')), '.env.local'),
+    path.join(process.resourcesPath || '', '.env.local'),
+    path.join(__dirname, '..', '.env.local'),
+  ];
+  log('Suche .env.local in:', candidates);
+  for (const p of candidates) {
+    try {
+      if (fs.existsSync(p)) {
+        const content = fs.readFileSync(p, 'utf8');
+        content.split('\n').forEach(line => {
+          const m = line.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*)\s*$/);
+          if (m) {
+            process.env[m[1]] = m[2].replace(/^["']|["']$/g, '');
+          }
+        });
+        log('✓ .env.local geladen von:', p);
+        log('  ANTHROPIC_API_KEY gesetzt:', !!process.env.ANTHROPIC_API_KEY, 'prefix:', process.env.ANTHROPIC_API_KEY?.slice(0, 12));
+        return true;
+      }
+    } catch (e) { log('Fehler beim Lesen:', p, e.message); }
+  }
+  log('⚠ Keine .env.local gefunden!');
+  return false;
 }
 
-// Startet Next.js production server (nur in packaged app)
-function startNextServer() {
-  if (isDev) return Promise.resolve();
+// ── NEXT.JS EMBEDDED STARTEN ─────────────────────────────────────
+async function startNextServer() {
+  if (isDev) return; // Im Dev-Modus läuft `next dev` extern
 
-  const appRoot = path.join(__dirname, '..');
+  log('Starte Next.js embedded...');
 
-  // Suche nach next binary im node_modules
-  const isWin = process.platform === 'win32';
-  const nextBin = path.join(appRoot, 'node_modules', '.bin', isWin ? 'next.cmd' : 'next');
+  // Resources-Pfad: bei electron-builder mit asar:false → resources/app/
+  // bei asar:true → resources/app.asar/
+  const appPath = process.resourcesPath
+    ? path.join(process.resourcesPath, 'app')
+    : path.join(__dirname, '..');
+
+  log('Next.js appPath:', appPath);
+  log('  .next exists:', fs.existsSync(path.join(appPath, '.next')));
+  log('  package.json exists:', fs.existsSync(path.join(appPath, 'package.json')));
+
+  // Lade Next.js direkt aus node_modules
+  let next;
+  try {
+    const nextPath = path.join(appPath, 'node_modules', 'next');
+    log('Lade next von:', nextPath);
+    next = require(nextPath);
+  } catch (e) {
+    log('FEHLER beim Laden von next:', e.message);
+    throw new Error(`Next.js konnte nicht geladen werden: ${e.message}`);
+  }
+
+  process.env.NODE_ENV = 'production';
+
+  const nextApp = next({
+    dev: false,
+    dir: appPath,
+    customServer: false,
+  });
+
+  await nextApp.prepare();
+  log('Next.js prepared.');
+
+  const handle = nextApp.getRequestHandler();
 
   return new Promise((resolve, reject) => {
-    nextProcess = spawn(nextBin, ['start', '-p', String(PORT)], {
-      cwd: appRoot,
-      env: { ...process.env, NODE_ENV: 'production', PORT: String(PORT) },
-      shell: isWin,
+    nextServer = http.createServer((req, res) => {
+      handle(req, res).catch(err => {
+        log('Request-Handler Fehler:', err.message);
+        res.statusCode = 500;
+        res.end('Server error');
+      });
     });
-
-    nextProcess.stdout.on('data', (data) => {
-      console.log('[next]', data.toString());
+    nextServer.listen(PORT, '127.0.0.1', () => {
+      log(`Next.js Server läuft auf http://127.0.0.1:${PORT}`);
+      resolve();
     });
-    nextProcess.stderr.on('data', (data) => {
-      console.error('[next-err]', data.toString());
-    });
-    nextProcess.on('error', (err) => {
-      console.error('Konnte Next.js nicht starten:', err);
+    nextServer.on('error', (err) => {
+      log('HTTP-Server Fehler:', err.message);
       reject(err);
     });
-    nextProcess.on('exit', (code) => {
-      console.log(`Next.js Server beendet mit Code ${code}`);
-    });
-
-    // Warte bis Server antwortet
-    waitForServer(PORT).then(resolve).catch(reject);
   });
 }
 
+// ── BROWSER WINDOW ───────────────────────────────────────────────
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
@@ -84,94 +138,74 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
     },
-    show: false, // Erst zeigen wenn ready-to-show, vermeidet Weiss-Flash
+    show: false,
   });
 
   mainWindow.once('ready-to-show', () => mainWindow.show());
+  mainWindow.loadURL(`http://127.0.0.1:${PORT}`);
 
-  mainWindow.loadURL(`http://localhost:${PORT}`);
-
-  // Externe Links im Default-Browser oeffnen, nicht in Electron
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: 'deny' };
   });
 
-  // Menue
   const template = [
-    {
-      label: 'Familien-Code',
-      submenu: [
-        { role: 'about' },
-        { type: 'separator' },
-        { role: 'hide' },
-        { role: 'hideOthers' },
-        { role: 'unhide' },
-        { type: 'separator' },
-        { role: 'quit', label: 'Beenden' },
-      ],
-    },
-    {
-      label: 'Bearbeiten',
-      submenu: [
-        { role: 'undo', label: 'Rueckgaengig' },
-        { role: 'redo', label: 'Wiederherstellen' },
-        { type: 'separator' },
-        { role: 'cut', label: 'Ausschneiden' },
-        { role: 'copy', label: 'Kopieren' },
-        { role: 'paste', label: 'Einfuegen' },
-        { role: 'selectAll', label: 'Alles auswaehlen' },
-      ],
-    },
-    {
-      label: 'Ansicht',
-      submenu: [
-        { role: 'reload', label: 'Neu laden' },
-        { role: 'forceReload', label: 'Erzwungenes Neuladen' },
-        { type: 'separator' },
-        { role: 'resetZoom', label: 'Zoom zuruecksetzen' },
-        { role: 'zoomIn', label: 'Vergroessern' },
-        { role: 'zoomOut', label: 'Verkleinern' },
-        { type: 'separator' },
-        { role: 'togglefullscreen', label: 'Vollbild' },
-      ],
-    },
-    {
-      label: 'Fenster',
-      submenu: [
-        { role: 'minimize', label: 'Minimieren' },
-        { role: 'close', label: 'Schliessen' },
-      ],
-    },
+    { label: 'Familien-Code', submenu: [
+      { role: 'about' }, { type: 'separator' },
+      { label: 'Log-Datei öffnen', click: () => shell.openPath(logFile) },
+      { label: 'Konfig-Ordner öffnen', click: () => shell.openPath(app.getPath('userData')) },
+      { type: 'separator' },
+      { role: 'hide' }, { role: 'hideOthers' }, { role: 'unhide' },
+      { type: 'separator' },
+      { role: 'quit', label: 'Beenden' },
+    ]},
+    { label: 'Bearbeiten', submenu: [
+      { role: 'undo', label: 'Rückgängig' }, { role: 'redo', label: 'Wiederherstellen' },
+      { type: 'separator' },
+      { role: 'cut', label: 'Ausschneiden' }, { role: 'copy', label: 'Kopieren' }, { role: 'paste', label: 'Einfügen' },
+      { role: 'selectAll', label: 'Alles auswählen' },
+    ]},
+    { label: 'Ansicht', submenu: [
+      { role: 'reload', label: 'Neu laden' }, { role: 'forceReload', label: 'Erzwungenes Neuladen' },
+      { type: 'separator' },
+      { role: 'resetZoom', label: 'Zoom zurücksetzen' }, { role: 'zoomIn', label: 'Vergrössern' }, { role: 'zoomOut', label: 'Verkleinern' },
+      { type: 'separator' },
+      { role: 'togglefullscreen', label: 'Vollbild' },
+      { role: 'toggleDevTools', label: 'Entwickler-Werkzeuge' },
+    ]},
+    { label: 'Fenster', submenu: [
+      { role: 'minimize', label: 'Minimieren' },
+      { role: 'close', label: 'Schliessen' },
+    ]},
   ];
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 
   mainWindow.on('closed', () => { mainWindow = null; });
 }
 
+// ── APP LIFECYCLE ────────────────────────────────────────────────
 app.whenReady().then(async () => {
+  loadEnvLocal();
+
   try {
     if (!isDev) {
-      // Production: starte Next.js intern
-      console.log('Starte Next.js Server...');
       await startNextServer();
-      console.log('Next.js bereit.');
     }
     createWindow();
+    log('✓ App gestartet.');
   } catch (err) {
+    log('STARTUP FEHLER:', err.stack || err.message);
     dialog.showErrorBox(
       'Familien-Code konnte nicht starten',
-      `Fehler beim Starten des Servers:\n\n${err.message}\n\nBitte stelle sicher dass die App vollstaendig installiert ist (mit npm install).`
+      `Fehler beim Starten:\n\n${err.message}\n\nLog-Datei:\n${logFile}\n\nBitte das Log an Mauro schicken.`
     );
+    shell.openPath(logFile);
     app.quit();
   }
 });
 
 app.on('window-all-closed', () => {
-  if (nextProcess) {
-    nextProcess.kill();
-    nextProcess = null;
-  }
+  if (nextServer) { nextServer.close(); nextServer = null; }
   if (process.platform !== 'darwin') app.quit();
 });
 
@@ -180,8 +214,5 @@ app.on('activate', () => {
 });
 
 app.on('before-quit', () => {
-  if (nextProcess) {
-    nextProcess.kill();
-    nextProcess = null;
-  }
+  if (nextServer) { nextServer.close(); nextServer = null; }
 });
