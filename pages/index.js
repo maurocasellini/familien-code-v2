@@ -365,24 +365,24 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
       21: { name: 'Das Universum', en: 'The Universe', essence: 'Vollendung. Die tanzende Göttin. Ganzheit jenseits aller Polaritäten.', light: 'Vollendung, kosmische Erfüllung, integrierte Ganzheit', shadow: 'Stillstand nach Erfüllung, Saturn-Schwere', astro: 'Saturn', note: 'Crowley: 21 = The Universe (NICHT The World). Umfassender — Saturn als Schwellenhüter.' },
     };
 
-    // Block-Summe + Tarot-Reduktion (max 22, dann Endkarte 1-9)
+    // Crowley Block-Summe + Reduktion: Reduziere bis ≤21 (NICHT weiter!).
+    // Was rauskommt, ist die Karte. Beispiele:
+    //   14 → 14 (Karte XIV)
+    //   15 → 15 (Karte XV)
+    //   22 → 4 (weiterreduzieren auf 2+2=4 = Kaiser)
+    //   30 → 3 (3+0=3 = Herrscherin)
+    //   21 → 21 (Universum, Endpunkt)
     function tarotReduce(num) {
       const steps = [num];
       let cur = num;
-      while (cur > 22) {
+      while (cur > 21) {
         cur = String(cur).split('').reduce((a, b) => a + parseInt(b, 10), 0);
         steps.push(cur);
       }
-      const firstCard = cur;
-      let endCard = firstCard;
-      if (firstCard > 9 && firstCard !== 11 && firstCard !== 22) {
-        endCard = String(firstCard).split('').reduce((a, b) => a + parseInt(b, 10), 0);
-      }
-      if (firstCard === 22) endCard = 0;
-      return { steps, firstCard, endCard };
+      return { steps, card: cur };
     }
 
-    // Lebenszahl als Block-Summe + Tarot-Karten
+    // Lebenszahl via Block-Summe (Crowley-Methode): EINE Karte
     function lifeNumTarot(birthDate) {
       if (!birthDate) return null;
       const m = birthDate.match(/^(\d{1,2})[\.\-/](\d{1,2})[\.\-/](\d{4})$/);
@@ -393,13 +393,12 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
       return {
         blockSum: sum,
         ...r,
-        firstCardData: CROWLEY[r.firstCard],
-        endCardData: CROWLEY[r.endCard],
-        calcString: `${d} + ${mo} + ${y} = ${sum} → ${r.steps.slice(1).join(' → ')} → ${r.endCard}`,
+        cardData: CROWLEY[r.card],
+        calcString: `${d} + ${mo} + ${y} = ${sum}${r.steps.length > 1 ? ' → ' + r.steps.slice(1).join(' → ') : ''}`,
       };
     }
 
-    // PJ als Block-Summe + Tarot-Karten
+    // PJ via Block-Summe (Crowley-Methode): EINE Karte
     function pjTarot(birthDate, refYear) {
       if (!birthDate) return null;
       const m = birthDate.match(/^(\d{1,2})[\.\-/](\d{1,2})[\.\-/](\d{4})$/);
@@ -410,9 +409,8 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
       return {
         blockSum: sum,
         ...r,
-        firstCardData: CROWLEY[r.firstCard],
-        endCardData: CROWLEY[r.endCard],
-        calcString: `${d} + ${mo} + ${refYear} = ${sum} → ${r.steps.slice(1).join(' → ') || r.firstCard} → ${r.endCard}`,
+        cardData: CROWLEY[r.card],
+        calcString: `${d} + ${mo} + ${refYear} = ${sum}${r.steps.length > 1 ? ' → ' + r.steps.slice(1).join(' → ') : ''}`,
       };
     }
 
@@ -802,15 +800,14 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
       const pjStr = pjInfo
         ? `${pjInfo.currentPJ} (aktiv vom ${pjInfo.startDate} bis ${pjInfo.endDate})`
         : 'n/a';
-      // Crowley Thoth Tarot — Lebenszahl-Karten
+      // Crowley Thoth Tarot — INTERNE Bedeutungsschicht (Namen NICHT in Analyse erwähnen!)
       const lt = lifeNumTarot(p.birthDate);
       const tarotLine = lt
-        ? `\n\n  CROWLEY THOTH TAROT (Lebenszahl):\n  Berechnung: ${lt.calcString}\n  - Zwischenkarte (Prozess/Weg): ${lt.firstCard} — ${lt.firstCardData?.name || 'n/a'} (${lt.firstCardData?.en || ''}) — ${lt.firstCardData?.essence || ''}\n  - Endkarte (Ziel/Kern): ${lt.endCard} — ${lt.endCardData?.name || 'n/a'} (${lt.endCardData?.en || ''}) — ${lt.endCardData?.essence || ''}\n  Beide Karten gleichwertig lesen: die Zwischenkarte ist der ALCHEMISTISCHE WEG, die Endkarte ist das SEELENZIEL.`
+        ? `\n\n  TAROT-BEDEUTUNGSSCHICHT (INTERN — verwende den INHALT, NIE die Karten-Namen oder Nummern explizit nennen!):\n  Block-Berechnung: ${lt.calcString}\n  Reduzierte Crowley-Zahl: ${lt.card}\n  Essenz dieser Schwingung: ${lt.cardData?.essence || ''}\n  Licht: ${lt.cardData?.light || ''}\n  Schatten: ${lt.cardData?.shadow || ''}\n  Astro-Zuordnung: ${lt.cardData?.astro || ''}\n  → Verwebe DIESE Bedeutungen in deine Lebenszahl-Interpretation. Nenne aber NIE Tarot, Karten, Crowley, Aleister oder Karten-Namen.`
         : '';
-      // Crowley Thoth Tarot — PJ-Karten
       const pjt = pjInfo ? pjTarot(p.birthDate, pjInfo.startYear) : null;
       const pjTarotLine = pjt
-        ? `\n  CROWLEY THOTH TAROT (Persönliches Jahr ${pjInfo.startYear}/${pjInfo.endYear}):\n  Berechnung: ${pjt.calcString}\n  - Zwischenkarte: ${pjt.firstCard} — ${pjt.firstCardData?.name || 'n/a'} — ${pjt.firstCardData?.essence || ''}\n  - Endkarte: ${pjt.endCard} — ${pjt.endCardData?.name || 'n/a'} — ${pjt.endCardData?.essence || ''}`
+        ? `\n  TAROT-BEDEUTUNGSSCHICHT für Persönliches Jahr (INTERN — Namen nicht nennen!):\n  Block-Berechnung: ${pjt.calcString}\n  Reduzierte Crowley-Zahl: ${pjt.card}\n  Essenz: ${pjt.cardData?.essence || ''}\n  Licht: ${pjt.cardData?.light || ''}\n  Schatten: ${pjt.cardData?.shadow || ''}`
         : '';
       return `\n${label}: ${full}\n- Geburtsdatum: ${p.birthDate || 'unbekannt'}\n- Geburtszeit: ${p.birthTime || 'unbekannt'}\n- Geburtsort: ${p.birthPlace || 'unbekannt'}\n- Lebenszahl: ${lifeNum(p.birthDate)}\n- Seelendrang: ${n.soul}\n- Persönlichkeitszahl: ${n.personality}\n- Ausdruckszahl: ${n.expression}\n- Persönliches Jahr (aktuell aktiv): ${pjStr}\n- Sternzeichen: ${zodiac(p.birthDate)}${tarotLine}${pjTarotLine}`;
     }
@@ -902,25 +899,24 @@ C) ASTROLOGIE-TIEFE (von Claude zu erweitern wenn Geburtszeit "${p.birthTime || 
           : `\n⚠ UEBERGANGSPHASE (innerhalb 6 Wochen VOR Geburtstag, noch ${info.daysUntilNextBirthday} Tage bis Wechsel): Aktuelles PJ ${info.currentPJ} klingt aus, kommendes PJ ${info.nextPJ} ist energetisch schon spuerbar. Das verdient eine explizite Erwähnung.`)
         : '';
 
-      // Crowley Tarot: Karten für aktuelles + nächstes PJ
+      // Crowley Tarot: Bedeutungsschicht für aktuelles + nächstes PJ (INTERN — Namen nicht nennen!)
       const pjtCur = pjTarot(p.birthDate, info.startYear);
       const pjtNext = pjTarot(p.birthDate, info.startYear + 1);
       const tarotBlock = pjtCur ? `
 
-CROWLEY THOTH TAROT für aktuelles + nächstes Persönliches Jahr:
-- Aktuelles PJ ${info.startYear}/${info.endYear}: ${pjtCur.calcString}
-  Zwischenkarte (Prozess/Weg): ${pjtCur.firstCard} — ${pjtCur.firstCardData?.name || ''} (${pjtCur.firstCardData?.en || ''})
-    Essenz: ${pjtCur.firstCardData?.essence || ''}
-    Licht: ${pjtCur.firstCardData?.light || ''}
-    Schatten: ${pjtCur.firstCardData?.shadow || ''}
-  Endkarte (Ziel/Kern): ${pjtCur.endCard} — ${pjtCur.endCardData?.name || ''} (${pjtCur.endCardData?.en || ''})
-    Essenz: ${pjtCur.endCardData?.essence || ''}
-    Licht: ${pjtCur.endCardData?.light || ''}
-    Schatten: ${pjtCur.endCardData?.shadow || ''}` : '';
+TAROT-BEDEUTUNGSSCHICHT für aktuelles + nächstes Persönliches Jahr (INTERN — verwende INHALT, niemals Karten-Namen oder Nummern explizit erwähnen):
+
+- Aktuelles PJ ${info.startYear}/${info.endYear}: ${pjtCur.calcString} → Crowley-Zahl ${pjtCur.card}
+  Essenz: ${pjtCur.cardData?.essence || ''}
+  Licht: ${pjtCur.cardData?.light || ''}
+  Schatten: ${pjtCur.cardData?.shadow || ''}
+  Astro-Zuordnung: ${pjtCur.cardData?.astro || ''}` : '';
       const tarotNext = pjtNext ? `
-- Nächstes PJ ${info.startYear + 1}/${info.endYear + 1}: ${pjtNext.calcString}
-  Zwischenkarte: ${pjtNext.firstCard} — ${pjtNext.firstCardData?.name || ''} — ${pjtNext.firstCardData?.essence || ''}
-  Endkarte: ${pjtNext.endCard} — ${pjtNext.endCardData?.name || ''} — ${pjtNext.endCardData?.essence || ''}` : '';
+
+- Nächstes PJ ${info.startYear + 1}/${info.endYear + 1}: ${pjtNext.calcString} → Crowley-Zahl ${pjtNext.card}
+  Essenz: ${pjtNext.cardData?.essence || ''}
+  Licht: ${pjtNext.cardData?.light || ''}
+  Schatten: ${pjtNext.cardData?.shadow || ''}` : '';
 
       return `
 
