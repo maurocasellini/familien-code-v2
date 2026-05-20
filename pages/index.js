@@ -1222,8 +1222,8 @@ EXTREM WICHTIG: Sei grosszügig mit Länge und Tiefe. Diese Analyse wird für CH
         }
         const hint = document.getElementById('loading-hint');
         if (hint) {
-          if (elapsed < 30) hint.textContent = 'Tiefe Analysen brauchen Zeit. Wir generieren gerade tausende Wörter speziell für dich.';
-          else if (elapsed < 120) hint.textContent = 'Claude schreibt jetzt deine persönlichen Sektionen. Etwa die Hälfte ist gleich geschafft.';
+          if (elapsed < 30) hint.textContent = 'Tiefe Analysen brauchen Zeit. Wir generieren gerade tausende Wörter speziell für diese Person.';
+          else if (elapsed < 120) hint.textContent = 'Die Sektionen werden jetzt geschrieben. Etwa die Hälfte ist gleich geschafft.';
           else if (elapsed < expectedSec) hint.textContent = 'Letzte Sektionen werden formuliert. Noch ein kleiner Moment.';
           else hint.textContent = 'Dauert heute etwas länger als üblich. Bitte einen Moment Geduld.';
         }
@@ -2495,12 +2495,12 @@ EXTREM WICHTIG: Sei grosszügig mit Länge und Tiefe. Diese Analyse wird für CH
               <span className="hero-symbol">✦</span>
               <h1 className="hero-h1">Familien-<br/><em>Code</em></h1>
               <div className="hero-rule"></div>
-              <p className="hero-sub">Deine Seelenlandschaft in Zahlen und Zeichen — persönlich, präzise, tiefgehend.</p>
+              <p className="hero-sub">Tiefgehende Seelenanalysen für deine Klient:innen, in Zahlen und Zeichen.</p>
               <button className="hero-cta" id="hero-cta-btn">
-                Analyse starten
+                Neue Analyse erstellen
                 <span className="hero-cta-arrow">→</span>
               </button>
-              <p className="hero-tagline">Für dich, dein/e Partner:in & deine Familie</p>
+              <p className="hero-tagline">Für Einzelpersonen, Paare, Familien & Alleinerziehende</p>
 
               <div className="lang-switch" id="lang-switch" data-lang="de">
                 <span className="lang-switch-label">Sprache der Analyse</span>
@@ -2581,15 +2581,15 @@ EXTREM WICHTIG: Sei grosszügig mit Länge und Tiefe. Diese Analyse wird für CH
         <div className="form-page">
           <div className="form-page-header">
             <div className="form-eyebrow">Schritt 1 von 6 · Konstellation</div>
-            <h2 className="form-h2">Für wen ist diese Analyse?</h2>
-            <p className="form-sub">Wähle deine Konstellation. Sie bestimmt Tiefe und Sektionen der Analyse.</p>
+            <h2 className="form-h2">Für wen erstellst du<br/>diese Analyse?</h2>
+            <p className="form-sub">Wähle die Konstellation der Klient:in. Sie bestimmt Tiefe und Sektionen der Analyse.</p>
           </div>
           <div className="card-grid-2">
             {[
-              ['solo', '✦', 'Nur für mich', 'Persönliche Einzelanalyse — Lebensweg, Seele, Namen-Energie & Jahresprognosen'],
-              ['pair', '✦✦', 'Für mich & Partner:in', 'Beziehungsanalyse — Dynamik, astrologische Resonanz & Verbindungen zu zweit'],
-              ['family', '✦✦✦', 'Für unsere Familie', 'Paar & Kinder — das vollständige Familiensystem mit allen Verbindungen'],
-              ['solo_children', '✦◇', 'Für mich & mein/e Kind/er', 'Alleinerziehend — du und deine Kinder im Zentrum der Analyse'],
+              ['solo', '✦', 'Einzelperson', 'Einzelanalyse — Lebensweg, Seele, Namen-Energie & Jahresprognosen für eine Person'],
+              ['pair', '✦✦', 'Paar', 'Beziehungsanalyse — Dynamik, astrologische Resonanz & Verbindungen zwischen den beiden'],
+              ['family', '✦✦✦', 'Familie', 'Paar & Kinder — das vollständige Familiensystem mit allen Verbindungen'],
+              ['solo_children', '✦◇', 'Alleinerziehende:r mit Kind/ern', 'Eine Person mit ihren Kindern im Zentrum der Analyse'],
             ].map(([value, icon, title, desc]) => (
               <div className="select-card" data-value={value} key={value}>
                 <div className="card-top"><div className="card-icon">{icon}</div><div className="card-check">✓</div></div>
@@ -2609,9 +2609,9 @@ EXTREM WICHTIG: Sei grosszügig mit Länge und Tiefe. Diese Analyse wird für CH
       <div className="screen" id="screen-person1">
         <div className="form-page">
           <div className="form-page-header">
-            <div className="form-eyebrow">Schritt 2 von 6 · Deine Daten</div>
-            <h2 className="form-h2">Du</h2>
-            <p className="form-sub">Der vollständige Taufname — der Name, den du bei der Geburt erhalten hast — ist für die Numerologie entscheidend.</p>
+            <div className="form-eyebrow">Schritt 2 von 6 · Klient:in</div>
+            <h2 className="form-h2">Die Person</h2>
+            <p className="form-sub">Der vollständige Taufname, also der Name den die Person bei der Geburt erhalten hat, ist für die Numerologie entscheidend.</p>
           </div>
           <div className="person-section">
             <div className="person-section-title">Persönliche Angaben</div>
@@ -2623,7 +2623,7 @@ EXTREM WICHTIG: Sei grosszügig mit Länge und Tiefe. Diese Analyse wird für CH
               if (fields) fields.classList.toggle('open');
             }}>
               <div className="toggle-box" id="nc-p1-toggle"></div>
-              <span className="namechange-toggle-label">Ich habe meinen Namen geändert (z. B. nach Heirat)</span>
+              <span className="namechange-toggle-label">Person hat den Namen geändert (z. B. nach Heirat)</span>
             </div>
             <div className="namechange-fields">
               <div className="field-row" style={{marginTop: '8px'}}>
@@ -2650,8 +2650,8 @@ EXTREM WICHTIG: Sei grosszügig mit Länge und Tiefe. Diese Analyse wird für CH
         <div className="form-page">
           <div className="form-page-header">
             <div className="form-eyebrow">Schritt 3 von 6 · Partner:in</div>
-            <h2 className="form-h2">Dein/e Partner:in</h2>
-            <p className="form-sub">Auch hier ist der Taufname massgebend — der Name bei der Geburt, nicht der spätere Alltagsname.</p>
+            <h2 className="form-h2">Partner:in</h2>
+            <p className="form-sub">Auch hier ist der Taufname massgebend, der Name bei der Geburt, nicht der spätere Alltagsname.</p>
           </div>
           <div className="person-section">
             <div className="person-section-title">Angaben Partner:in</div>
@@ -2690,7 +2690,7 @@ EXTREM WICHTIG: Sei grosszügig mit Länge und Tiefe. Diese Analyse wird für CH
         <div className="form-page">
           <div className="form-page-header">
             <div className="form-eyebrow">Schritt 4 von 6 · Schlüsseldaten</div>
-            <h2 className="form-h2">Eure Geschichte</h2>
+            <h2 className="form-h2">Gemeinsame Geschichte</h2>
             <p className="form-sub">Diese Daten fliessen als numerologische Energiepunkte in die Analyse ein. Beide Angaben sind vollständig optional.</p>
           </div>
           <div className="person-section">
@@ -2743,8 +2743,8 @@ EXTREM WICHTIG: Sei grosszügig mit Länge und Tiefe. Diese Analyse wird für CH
         <div className="form-page">
           <div className="form-page-header">
             <div className="form-eyebrow">Optional · Ahnenlinie</div>
-            <h2 className="form-h2">Was aus deiner Familie<br/>mitschwingt</h2>
-            <p className="form-sub">Optional: Gib die Daten von Mutter und/oder Vater ein, um wiederkehrende Muster und Themen aus dem Familiensystem in die Analyse einfliessen zu lassen. Alle Felder freiwillig — was du nicht weisst, lass leer.</p>
+            <h2 className="form-h2">Was aus dem Familiensystem<br/>mitschwingt</h2>
+            <p className="form-sub">Optional: Daten von Mutter und/oder Vater der Person eingeben, um wiederkehrende Muster und Themen aus dem Familiensystem in die Analyse einfliessen zu lassen. Alle Felder freiwillig, was nicht bekannt ist, leer lassen.</p>
           </div>
 
           <div className="toggle-row" id="ancestry-include-toggle">
@@ -2806,7 +2806,7 @@ EXTREM WICHTIG: Sei grosszügig mit Länge und Tiefe. Diese Analyse wird für CH
         <div className="form-page">
           <div className="form-page-header">
             <div className="form-eyebrow">Schritt 6 · Detailtiefe</div>
-            <h2 className="form-h2">Wie ausführlich<br/>soll deine Analyse werden?</h2>
+            <h2 className="form-h2">Wie ausführlich<br/>soll die Analyse werden?</h2>
             <p className="form-sub">Von kompakter Übersicht bis hin zur vollen Profi-Tiefe. Je länger, desto mehr Wartezeit, dafür mehr Tiefe pro Sektion.</p>
           </div>
           <div className="depth-control">
@@ -2835,8 +2835,8 @@ EXTREM WICHTIG: Sei grosszügig mit Länge und Tiefe. Diese Analyse wird für CH
         <div className="form-page">
           <div className="form-page-header">
             <div className="form-eyebrow">Schritt 7 · Fokus</div>
-            <h2 className="form-h2">Was bewegt dich<br/>am meisten?</h2>
-            <p className="form-sub">Wähle deinen Schwerpunkt. Die Analyse bleibt vollständig — dieser Fokus bestimmt, wo sie am tiefsten geht.</p>
+            <h2 className="form-h2">Worauf soll der<br/>Schwerpunkt liegen?</h2>
+            <p className="form-sub">Wähle das Thema, das aktuell am stärksten bewegt. Die Analyse bleibt vollständig, dieser Fokus bestimmt wo sie am tiefsten geht.</p>
           </div>
           <div className="card-grid-2-3">
             {[
@@ -2864,14 +2864,14 @@ EXTREM WICHTIG: Sei grosszügig mit Länge und Tiefe. Diese Analyse wird für CH
       <div className="screen" id="screen-loading">
         <div className="loading-inner">
           <span className="loading-symbol">✦</span>
-          <div className="loading-h">Deine Analyse<br/>wird erstellt…</div>
+          <div className="loading-h">Analyse wird<br/>erstellt…</div>
           <div className="loading-sub" id="loading-sub">Lebenszahlen werden ermittelt…</div>
           <div className="loading-timer" id="loading-timer">00:00</div>
           <div className="loading-eta" id="loading-eta">Geschätzte Dauer: 3–6 Minuten</div>
           <div className="loading-progress">
             <div className="loading-progress-bar" id="loading-progress-bar"></div>
           </div>
-          <div className="loading-hint" id="loading-hint">Tiefe Analysen brauchen Zeit. Wir generieren gerade tausende Wörter speziell für dich.</div>
+          <div className="loading-hint" id="loading-hint">Tiefe Analysen brauchen Zeit. Wir generieren gerade tausende Wörter speziell für diese Person.</div>
         </div>
       </div>
 
