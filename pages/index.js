@@ -111,23 +111,6 @@ export default function Home() {
       const email = document.getElementById('lead-email')?.value.trim();
       if (!name || !email) return;
       state.lead = { name, email };
-
-      // EmailJS — fire and forget
-      try {
-        if (window.emailjs && process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID) {
-          window.emailjs.send(
-            process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID,
-            process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID,
-            {
-              to_email: 'info@herzbewegung.ch',
-              user_name: name,
-              user_email: email,
-              timestamp: new Date().toLocaleString('de-CH'),
-            }
-          ).catch(() => {});
-        }
-      } catch {}
-
       goNext();
     }
 
@@ -1841,14 +1824,6 @@ EXTREM WICHTIG: Sei grosszügig mit Länge und Tiefe. Diese Analyse wird für CH
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Raleway:wght@300;400;500&display=swap" rel="stylesheet" />
-        <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-        <script dangerouslySetInnerHTML={{__html: `
-          window.addEventListener('load', function() {
-            if (window.emailjs && '${process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || ''}') {
-              window.emailjs.init({ publicKey: '${process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || ''}' });
-            }
-          });
-        `}} />
         <style>{`
           :root {
             --cream: #fdf8f2;
