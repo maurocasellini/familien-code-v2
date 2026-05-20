@@ -44,6 +44,7 @@ export default function Home() {
       const flow = getFlow();
       const idx = flow.indexOf(cur);
       const prog = document.getElementById('nav-progress');
+      if (!prog) return; // Defensive: falls Element noch nicht da, später nochmal
       const steps = flow.filter(s => !['splash', 'loading', 'result'].includes(s));
       if (['splash', 'loading', 'result'].includes(cur)) {
         prog.innerHTML = '';
@@ -61,13 +62,23 @@ export default function Home() {
     }
 
     function goNext() {
-      const f = getFlow(), i = f.indexOf(cur);
-      if (i < f.length - 1) showScreen(f[i + 1]);
+      try {
+        const f = getFlow(), i = f.indexOf(cur);
+        console.log('[FC] goNext from', cur, '→', f[i+1] || '(end)');
+        if (i < f.length - 1) showScreen(f[i + 1]);
+      } catch (err) {
+        console.error('[FC] goNext crash:', err);
+        alert('Navigation-Fehler: ' + err.message);
+      }
     }
 
     function goBack() {
-      const f = getFlow(), i = f.indexOf(cur);
-      if (i > 0) showScreen(f[i - 1]);
+      try {
+        const f = getFlow(), i = f.indexOf(cur);
+        if (i > 0) showScreen(f[i - 1]);
+      } catch (err) {
+        console.error('[FC] goBack crash:', err);
+      }
     }
 
     // ── CARDS ──────────────────────────────────────────────────────
@@ -1108,8 +1119,10 @@ EXTREM WICHTIG: Sei grosszügig mit Länge und Tiefe. Diese Analyse wird für CH
 
     // ── API CALL ───────────────────────────────────────────────────
     async function startAnalysis() {
-      showScreen('loading');
-      startLoader();
+      console.log('[FC] startAnalysis() called');
+      try {
+        showScreen('loading');
+        startLoader();
       const p1 = getPerson('p1'), p2 = getPerson('p2');
       const hasPair = state.constellation === 'pair' || state.constellation === 'family';
       const hasKids = state.constellation === 'family' || state.constellation === 'solo_children';
@@ -1165,6 +1178,13 @@ EXTREM WICHTIG: Sei grosszügig mit Länge und Tiefe. Diese Analyse wird für CH
         renderError(err.message);
       }
       showScreen('result');
+      } catch (outerErr) {
+        // Catch alles was im startAnalysis schief geht VOR dem inneren try-catch
+        console.error('[FC] startAnalysis OUTER crash:', outerErr);
+        alert('Analyse-Fehler:\n\n' + (outerErr.message || outerErr) + '\n\nDevTools → Console für mehr Info.');
+        stopLoader();
+        showScreen('focus');
+      }
     }
 
     // ── RENDER RESULT ──────────────────────────────────────────────
@@ -1677,6 +1697,7 @@ EXTREM WICHTIG: Sei grosszügig mit Länge und Tiefe. Diese Analyse wird für CH
       const btn = e.target.closest('button, [role="button"]');
       if (btn) {
         const id = btn.id;
+        console.log('[FC] Click on button:', id, 'classes:', btn.className);
         if (id === 'nav-reset') resetAll();
         if (id === 'btn-add-child') addChild();
         if (id === 'btn-lead-next') submitLead();
