@@ -335,6 +335,87 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
     function lifeNum(d) { if (!d) return 'n/a'; const dg = d.replace(/\D/g, ''); if (!dg) return 'n/a'; return red(dg.split('').reduce((a, c) => a + parseInt(c), 0)); }
     function nameNums(full) { const c = full.toUpperCase().replace(/[^A-Z]/g, ''); let s = 0, p = 0, e = 0; for (const ch of c) { const v = LM[ch] || 0; e += v; if (VO.has(ch)) s += v; else p += v; } return { soul: red(s) || 'n/a', personality: red(p) || 'n/a', expression: red(e) || 'n/a' }; }
 
+    // ── CROWLEY THOTH TAROT ──────────────────────────────────────────
+    // Die 22 Grossen Arkana mit Crowley-spezifischen Namen (NICHT Rider-Waite):
+    //   8 = Adjustment (nicht Strength), 11 = Lust (nicht Justice),
+    //   14 = Art (nicht Temperance), 20 = Aeon (nicht Judgement),
+    //   21 = Universe (nicht World)
+    const CROWLEY = {
+      0:  { name: 'Der Narr', en: 'The Fool', essence: 'Heiliger Sprung ins Unbekannte. Reine Möglichkeit. Vertrauen vor jeder Form.', light: 'Mut, Vertrauen, kindliche Offenheit, schöpferischer Ursprung, freier Geist', shadow: 'Naivität, Verantwortungsflucht, Beliebigkeit', astro: 'Uranus / Luft' },
+      1:  { name: 'Der Magus', en: 'The Magus', essence: 'Wille in die Welt übersetzt. Das Wort, das schöpft.', light: 'Klarer Wille, Sprachmacht, Vermittlung, Konzentration', shadow: 'Manipulation, Trickserei, Worte ohne Substanz', astro: 'Merkur' },
+      2:  { name: 'Die Hohepriesterin', en: 'The Priestess', essence: 'Der innere Mond. Wissen, das nicht durch Worte kommt.', light: 'Intuition, Empfänglichkeit, inneres Hören, Mysterium', shadow: 'Verschlossenheit, Abkapselung, Misstrauen', astro: 'Mond' },
+      3:  { name: 'Die Herrscherin', en: 'The Empress', essence: 'Schöpferische Fülle. Liebe als Form gebende Kraft.', light: 'Fruchtbarkeit, Schönheit, sinnliche Wärme, schöpferischer Überfluss', shadow: 'Übermass, Verstrickung in Genuss, übergriffige Fürsorge', astro: 'Venus' },
+      4:  { name: 'Der Herrscher', en: 'The Emperor', essence: 'Ordnung im Chaos. Strukturgebende Vater-Erfahrung.', light: 'Klare Grenzen, Verantwortung, innere Autorität, Stabilität', shadow: 'Tyrannei, Starrheit, Kontrolle aus Angst', astro: 'Widder' },
+      5:  { name: 'Der Hierophant', en: 'The Hierophant', essence: 'Brücke zwischen Himmel und Erde. Lehrer, der das Sakrale ins Alltägliche bringt.', light: 'Spirituelle Tradition, Weisheitsweitergabe, Initiation, das Heilige im Gewöhnlichen', shadow: 'Dogma, blinder Gehorsam, religiöse Erstarrung', astro: 'Stier' },
+      6:  { name: 'Die Liebenden', en: 'The Lovers', essence: 'Entscheidung aus dem Herzen. Vereinigung der Gegensätze.', light: 'Tiefe Bindung, bewusste Wahl, Liebe als Erkenntnis', shadow: 'Unentschiedenheit, Verschmelzung, Selbstverlust', astro: 'Zwillinge' },
+      7:  { name: 'Der Wagen', en: 'The Chariot', essence: 'Bewegtes Gleichgewicht. Der Heilige Gral als Gefäss.', light: 'Zielstrebigkeit, emotionale Stärke, schützender Panzer', shadow: 'Verbissenheit, emotionale Härte, Triebkraft ohne Richtung', astro: 'Krebs' },
+      8:  { name: 'Anpassung', en: 'Adjustment', essence: 'Karmisches Gleichgewicht. Wahrheit jenseits aller Wertung.', light: 'Fairness, klares Urteil, schwingendes Gleichgewicht', shadow: 'Selbstgerechtigkeit, kaltes Richten, Schwarz-Weiss-Denken', astro: 'Waage', note: 'Crowley: 8 = Adjustment (NICHT Strength). Crowley vertauschte 8 und 11 aus kabbalistischen Gründen.' },
+      9:  { name: 'Der Eremit', en: 'The Hermit', essence: 'Inneres Licht in der Stille. Der Weise, der gegangen ist um zu sehen.', light: 'Innere Reise, Selbstkenntnis, Lampe für andere', shadow: 'Isolation, Weltflucht, sich verstecken', astro: 'Jungfrau' },
+      10: { name: 'Das Glücksrad', en: 'Fortune', essence: 'Das ewige Drehen. Karma als Spirale.', light: 'Wandel, Schicksalsöffnung, Vertrauen in den Lauf', shadow: 'Schicksalsgläubigkeit als Ausrede, Passivität', astro: 'Jupiter' },
+      11: { name: 'Lust', en: 'Lust', essence: 'Heilige Lebenskraft. Die Frau auf dem Löwen. Mut der Lebensbejahung.', light: 'Sinnliche Lebenslust, schöpferische Wildheit, Lebensjubel', shadow: 'Gier, Sucht, Lust als Flucht, Konsumzwang', astro: 'Löwe', note: 'Crowley: 11 = Lust (NICHT Justice). Crowley vertauschte 8 und 11 aus kabbalistischen Gründen.' },
+      12: { name: 'Der Gehängte', en: 'The Hanged Man', essence: 'Umkehrung der Sicht. Initiation durch Stillstand.', light: 'Perspektivwechsel, Hingabe, geistige Initiation', shadow: 'Märtyrertum, Stillstand, Selbstmitleid', astro: 'Neptun / Wasser' },
+      13: { name: 'Tod', en: 'Death', essence: 'Transformation durch Loslassen. Wandlung jenseits der Form.', light: 'Tiefe Wandlung, Befreiung vom Überholten, neue Phase', shadow: 'Festhalten am Toten, Angst vor Wandel, Stagnation', astro: 'Skorpion', karmic: true },
+      14: { name: 'Kunst', en: 'Art', essence: 'Alchemie der Gegensätze. Im Kessel werden Feuer und Wasser zur dritten Substanz.', light: 'Integration, richtige Mischung, Synthese, schöpferische Verbindung', shadow: 'Lauwarme Mitte, übermässige Vermittlung, Konfliktvermeidung', astro: 'Schütze', note: 'Crowley: 14 = Art (NICHT Temperance). Bei Crowley kraftvoll alchemistisch.', karmic: true },
+      15: { name: 'Der Teufel', en: 'The Devil', essence: 'Schöpferische Kraft in Materie gebunden. Das Lachen des Pan.', light: 'Verkörperung, schöpferische Materie, Sinnlichkeit, Humor', shadow: 'Materialismus, Sucht, Schatten-Verstrickung', astro: 'Steinbock' },
+      16: { name: 'Der Turm', en: 'The Tower', essence: 'Blitzschlag in falsche Strukturen. Plötzliche Wahrheit.', light: 'Befreiung durch Zusammenbruch, Wahrheit die Lügen zerstört', shadow: 'Zerstörerische Wut, Trauma, plötzlicher Verlust', astro: 'Mars', karmic: true },
+      17: { name: 'Der Stern', en: 'The Star', essence: 'Heilige Hoffnung. Wasser des Lebens. Göttin Nuit.', light: 'Hoffnung, Erneuerung, Vertrauen, kosmische Inspiration', shadow: 'Realitätsflucht in Hoffnungsbilder, schwammige Visionen', astro: 'Wassermann' },
+      18: { name: 'Der Mond', en: 'The Moon', essence: 'Der Weg durch die Nacht. Das Unbewusste, die Tiefe der Seele.', light: 'Traumweisheit, intuitive Tiefen, Schatten-Konfrontation', shadow: 'Verwirrung, Täuschung, Verlorenheit, Depression', astro: 'Fische' },
+      19: { name: 'Die Sonne', en: 'The Sun', essence: 'Strahlendes Bewusstsein. Das Kind, das die Welt mit klaren Augen sieht.', light: 'Freude, Klarheit, Lebenslust, schöpferische Frische', shadow: 'Naivität, fehlende Tiefe, oberflächliche Heiterkeit', astro: 'Sonne', karmic: true },
+      20: { name: 'Das Äon', en: 'The Aeon', essence: 'Neues Zeitalter. Krönung des Horus. Wiedergeburt in Verantwortung.', light: 'Geistige Wiedergeburt, finale Initiation, kosmische Verantwortung', shadow: 'Apokalyptisches Denken, Endzeit-Drama', astro: 'Pluto / Feuer', note: 'Crowley: 20 = The Aeon (NICHT Judgement). Nicht Gericht, sondern Neuzeitalter (Horus).' },
+      21: { name: 'Das Universum', en: 'The Universe', essence: 'Vollendung. Die tanzende Göttin. Ganzheit jenseits aller Polaritäten.', light: 'Vollendung, kosmische Erfüllung, integrierte Ganzheit', shadow: 'Stillstand nach Erfüllung, Saturn-Schwere', astro: 'Saturn', note: 'Crowley: 21 = The Universe (NICHT The World). Umfassender — Saturn als Schwellenhüter.' },
+    };
+
+    // Block-Summe + Tarot-Reduktion (max 22, dann Endkarte 1-9)
+    function tarotReduce(num) {
+      const steps = [num];
+      let cur = num;
+      while (cur > 22) {
+        cur = String(cur).split('').reduce((a, b) => a + parseInt(b, 10), 0);
+        steps.push(cur);
+      }
+      const firstCard = cur;
+      let endCard = firstCard;
+      if (firstCard > 9 && firstCard !== 11 && firstCard !== 22) {
+        endCard = String(firstCard).split('').reduce((a, b) => a + parseInt(b, 10), 0);
+      }
+      if (firstCard === 22) endCard = 0;
+      return { steps, firstCard, endCard };
+    }
+
+    // Lebenszahl als Block-Summe + Tarot-Karten
+    function lifeNumTarot(birthDate) {
+      if (!birthDate) return null;
+      const m = birthDate.match(/^(\d{1,2})[\.\-/](\d{1,2})[\.\-/](\d{4})$/);
+      if (!m) return null;
+      const d = parseInt(m[1], 10), mo = parseInt(m[2], 10), y = parseInt(m[3], 10);
+      const sum = d + mo + y;
+      const r = tarotReduce(sum);
+      return {
+        blockSum: sum,
+        ...r,
+        firstCardData: CROWLEY[r.firstCard],
+        endCardData: CROWLEY[r.endCard],
+        calcString: `${d} + ${mo} + ${y} = ${sum} → ${r.steps.slice(1).join(' → ')} → ${r.endCard}`,
+      };
+    }
+
+    // PJ als Block-Summe + Tarot-Karten
+    function pjTarot(birthDate, refYear) {
+      if (!birthDate) return null;
+      const m = birthDate.match(/^(\d{1,2})[\.\-/](\d{1,2})[\.\-/](\d{4})$/);
+      if (!m) return null;
+      const d = parseInt(m[1], 10), mo = parseInt(m[2], 10);
+      const sum = d + mo + refYear;
+      const r = tarotReduce(sum);
+      return {
+        blockSum: sum,
+        ...r,
+        firstCardData: CROWLEY[r.firstCard],
+        endCardData: CROWLEY[r.endCard],
+        calcString: `${d} + ${mo} + ${refYear} = ${sum} → ${r.steps.slice(1).join(' → ') || r.firstCard} → ${r.endCard}`,
+      };
+    }
+
     // ── PERSOENLICHES JAHR (geburtstagsbasiert, dynamisch) ──────────
     // Quersumme einer Zahl (ohne Master-Reduktion)
     function digitSum(n) { return String(n).split('').reduce((a, d) => a + parseInt(d || 0, 10), 0); }
@@ -721,7 +802,17 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
       const pjStr = pjInfo
         ? `${pjInfo.currentPJ} (aktiv vom ${pjInfo.startDate} bis ${pjInfo.endDate})`
         : 'n/a';
-      return `\n${label}: ${full}\n- Geburtsdatum: ${p.birthDate || 'unbekannt'}\n- Geburtszeit: ${p.birthTime || 'unbekannt'}\n- Geburtsort: ${p.birthPlace || 'unbekannt'}\n- Lebenszahl: ${lifeNum(p.birthDate)}\n- Seelendrang: ${n.soul}\n- Persönlichkeitszahl: ${n.personality}\n- Ausdruckszahl: ${n.expression}\n- Persönliches Jahr (aktuell aktiv): ${pjStr}\n- Sternzeichen: ${zodiac(p.birthDate)}`;
+      // Crowley Thoth Tarot — Lebenszahl-Karten
+      const lt = lifeNumTarot(p.birthDate);
+      const tarotLine = lt
+        ? `\n\n  CROWLEY THOTH TAROT (Lebenszahl):\n  Berechnung: ${lt.calcString}\n  - Zwischenkarte (Prozess/Weg): ${lt.firstCard} — ${lt.firstCardData?.name || 'n/a'} (${lt.firstCardData?.en || ''}) — ${lt.firstCardData?.essence || ''}\n  - Endkarte (Ziel/Kern): ${lt.endCard} — ${lt.endCardData?.name || 'n/a'} (${lt.endCardData?.en || ''}) — ${lt.endCardData?.essence || ''}\n  Beide Karten gleichwertig lesen: die Zwischenkarte ist der ALCHEMISTISCHE WEG, die Endkarte ist das SEELENZIEL.`
+        : '';
+      // Crowley Thoth Tarot — PJ-Karten
+      const pjt = pjInfo ? pjTarot(p.birthDate, pjInfo.startYear) : null;
+      const pjTarotLine = pjt
+        ? `\n  CROWLEY THOTH TAROT (Persönliches Jahr ${pjInfo.startYear}/${pjInfo.endYear}):\n  Berechnung: ${pjt.calcString}\n  - Zwischenkarte: ${pjt.firstCard} — ${pjt.firstCardData?.name || 'n/a'} — ${pjt.firstCardData?.essence || ''}\n  - Endkarte: ${pjt.endCard} — ${pjt.endCardData?.name || 'n/a'} — ${pjt.endCardData?.essence || ''}`
+        : '';
+      return `\n${label}: ${full}\n- Geburtsdatum: ${p.birthDate || 'unbekannt'}\n- Geburtszeit: ${p.birthTime || 'unbekannt'}\n- Geburtsort: ${p.birthPlace || 'unbekannt'}\n- Lebenszahl: ${lifeNum(p.birthDate)}\n- Seelendrang: ${n.soul}\n- Persönlichkeitszahl: ${n.personality}\n- Ausdruckszahl: ${n.expression}\n- Persönliches Jahr (aktuell aktiv): ${pjStr}\n- Sternzeichen: ${zodiac(p.birthDate)}${tarotLine}${pjTarotLine}`;
     }
 
     // Erweiterter Numerologie-Block: Geburtstagszahl, Maturity, Rationale, Karmic, Hidden Passion, Essence, Pinnacles, Personal Day, Returns, Mondknoten
@@ -811,6 +902,26 @@ C) ASTROLOGIE-TIEFE (von Claude zu erweitern wenn Geburtszeit "${p.birthTime || 
           : `\n⚠ UEBERGANGSPHASE (innerhalb 6 Wochen VOR Geburtstag, noch ${info.daysUntilNextBirthday} Tage bis Wechsel): Aktuelles PJ ${info.currentPJ} klingt aus, kommendes PJ ${info.nextPJ} ist energetisch schon spuerbar. Das verdient eine explizite Erwähnung.`)
         : '';
 
+      // Crowley Tarot: Karten für aktuelles + nächstes PJ
+      const pjtCur = pjTarot(p.birthDate, info.startYear);
+      const pjtNext = pjTarot(p.birthDate, info.startYear + 1);
+      const tarotBlock = pjtCur ? `
+
+CROWLEY THOTH TAROT für aktuelles + nächstes Persönliches Jahr:
+- Aktuelles PJ ${info.startYear}/${info.endYear}: ${pjtCur.calcString}
+  Zwischenkarte (Prozess/Weg): ${pjtCur.firstCard} — ${pjtCur.firstCardData?.name || ''} (${pjtCur.firstCardData?.en || ''})
+    Essenz: ${pjtCur.firstCardData?.essence || ''}
+    Licht: ${pjtCur.firstCardData?.light || ''}
+    Schatten: ${pjtCur.firstCardData?.shadow || ''}
+  Endkarte (Ziel/Kern): ${pjtCur.endCard} — ${pjtCur.endCardData?.name || ''} (${pjtCur.endCardData?.en || ''})
+    Essenz: ${pjtCur.endCardData?.essence || ''}
+    Licht: ${pjtCur.endCardData?.light || ''}
+    Schatten: ${pjtCur.endCardData?.shadow || ''}` : '';
+      const tarotNext = pjtNext ? `
+- Nächstes PJ ${info.startYear + 1}/${info.endYear + 1}: ${pjtNext.calcString}
+  Zwischenkarte: ${pjtNext.firstCard} — ${pjtNext.firstCardData?.name || ''} — ${pjtNext.firstCardData?.essence || ''}
+  Endkarte: ${pjtNext.endCard} — ${pjtNext.endCardData?.name || ''} — ${pjtNext.endCardData?.essence || ''}` : '';
+
       return `
 
 PERSOENLICHES JAHR IM DETAIL — ${label} (heute: ${todayStr}):
@@ -818,6 +929,7 @@ PERSOENLICHES JAHR IM DETAIL — ${label} (heute: ${todayStr}):
 - Aktueller Persönlicher Monat (${todayStr.slice(3,5)}/${today.getFullYear()}): PM ${cm ? cm.pm : 'n/a'}
 - Nächstes PJ ab ${info.endDate}: ${info.nextPJ}
 - Übernächstes PJ ab ${String(info.birthDay).padStart(2,'0')}.${String(info.birthMonth).padStart(2,'0')}.${info.endYear + 1}: ${info.nextPJ2}
+${tarotBlock}${tarotNext}
 
 12 PERSOENLICHE MONATE DES AKTUELLEN PJ ${info.currentPJ}:
 ${monthLines}${transitionNote}`;
