@@ -332,7 +332,8 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
     const LM = { A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, H: 8, I: 9, J: 1, K: 2, L: 3, M: 4, N: 5, O: 6, P: 7, Q: 8, R: 9, S: 1, T: 2, U: 3, V: 4, W: 5, X: 6, Y: 7, Z: 8 };
     const VO = new Set(['A', 'E', 'I', 'O', 'U']);
     function red(n) { if (n === 11 || n === 22 || n === 33) return n; if (n < 10) return n; return red(String(n).split('').reduce((a, d) => a + parseInt(d), 0)); }
-    function lifeNum(d) { if (!d) return 'n/a'; const dg = d.replace(/\D/g, ''); if (!dg) return 'n/a'; return red(dg.split('').reduce((a, c) => a + parseInt(c), 0)); }
+    // Helfer: pythagoräische Reduktion ohne Master (für Buchstaben-Zahlen)
+    function redPlain(n) { if (n < 10) return n; return redPlain(String(n).split('').reduce((a, d) => a + parseInt(d), 0)); }
     function nameNums(full) { const c = full.toUpperCase().replace(/[^A-Z]/g, ''); let s = 0, p = 0, e = 0; for (const ch of c) { const v = LM[ch] || 0; e += v; if (VO.has(ch)) s += v; else p += v; } return { soul: red(s) || 'n/a', personality: red(p) || 'n/a', expression: red(e) || 'n/a' }; }
 
     // ── CROWLEY THOTH TAROT ──────────────────────────────────────────
@@ -414,15 +415,23 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
       };
     }
 
-    // ── PERSOENLICHES JAHR (geburtstagsbasiert, dynamisch) ──────────
-    // Quersumme einer Zahl (ohne Master-Reduktion)
-    function digitSum(n) { return String(n).split('').reduce((a, d) => a + parseInt(d || 0, 10), 0); }
-    // Berechnet PJ-Zahl für einen gegebenen "Startjahr" (Jahr in dem das PJ am Geburtstag startete)
+    // ── PERSOENLICHES JAHR (CROWLEY/BLOCK-METHODE) ──────────────────
+    // Tag + Monat + KOMPLETTES Jahr (nicht Quersumme), dann tarotReduce bis ≤21
     function calcPJ(birthDay, birthMonth, startYear) {
-      // Klassisch: Tag + Monat + Quersumme(Jahr), dann reduziert mit Master-Erhalt
-      const ys = digitSum(startYear);
-      return red(birthDay + birthMonth + ys);
+      return tarotReduce(birthDay + birthMonth + startYear).card;
     }
+
+    // Lebenszahl per Crowley/Block-Methode: Tag + Monat + Jahr, reduzieren bis ≤21
+    function lifeNum(d) {
+      if (!d) return 'n/a';
+      const m = String(d).match(/^(\d{1,2})[\.\-/](\d{1,2})[\.\-/](\d{4})$/);
+      if (!m) return 'n/a';
+      const day = parseInt(m[1], 10);
+      const month = parseInt(m[2], 10);
+      const year = parseInt(m[3], 10);
+      return tarotReduce(day + month + year).card;
+    }
+
     // Liefert reichhaltige Info zum aktuellen PJ basierend auf heute
     function getPersonalYearInfo(birthDate) {
       if (!birthDate) return null;
@@ -643,7 +652,10 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
       return null;
     }
 
-    // ── D) PINNACLE-MECHANIK VERTIEFT ──────────────────────────────
+    // Quersumme einer Zahl (für interne Berechnungen wo nötig)
+    function digitSum(n) { return String(n).split('').reduce((a, d) => a + parseInt(d || 0, 10), 0); }
+
+    // ── D) PINNACLE-MECHANIK VERTIEFT (CROWLEY-METHODE: Block + ≤21) ─
     function pinnacleDetails(birthDate, today) {
       if (!birthDate) return null;
       const pt = birthDate.split('.');
@@ -654,18 +666,17 @@ AHNENLINIE — was aus der Familie mitschwingt (optional eingegeben):${mLine}${f
       const lzVal = parseInt(lifeNum(birthDate), 10);
       if (!day || !month || !year || isNaN(lzVal)) return null;
 
-      // Erste Pinnacle: bis Alter (36 - LZ). Bei Master ist LZ schon reduziert.
-      const lzReduced = lzVal >= 10 ? digitSum(lzVal) : lzVal;
+      // Erste Pinnacle endet bei Alter (36 - LZ). LZ bei Crowley schon klein (≤21).
+      const lzReduced = lzVal > 9 ? digitSum(lzVal) : lzVal;
       const p1End = 36 - lzReduced;
       const p2End = p1End + 9;
       const p3End = p2End + 9;
 
-      // Pinnacle-Zahlen
-      const p1val = red(red(day) + red(month));
-      const yearReducedFull = red(digitSum(year));
-      const p2val = red(red(day) + yearReducedFull);
-      const p3val = red(p1val + p2val);
-      const p4val = red(red(month) + yearReducedFull);
+      // Pinnacle-Werte (Crowley/Block-Methode, Reduktion ≤21)
+      const p1val = tarotReduce(day + month).card;
+      const p2val = tarotReduce(day + year).card;
+      const p3val = tarotReduce(p1val + p2val).card;
+      const p4val = tarotReduce(month + year).card;
 
       // Wechseldaten
       const fmt = (d, m, y) => `${String(d).padStart(2, '0')}.${String(m).padStart(2, '0')}.${y}`;
